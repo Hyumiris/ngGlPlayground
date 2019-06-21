@@ -13,6 +13,13 @@
 			true,
 			"rxjs/Rx"
 		],
+		"variable-name": {
+			"options": [
+				"ban-keywords",
+				"check-format",
+				"allow-leading-underscore"
+			]
+		},
 		"indent": [
 			true,
 			"tabs"
@@ -68,7 +75,7 @@
 		"no-output-on-prefix": true,
 		"use-input-property-decorator": true,
 		"use-output-property-decorator": true,
-		"use-host-property-decorator": true,
+		"use-host-property-decorator": false,
 		"no-input-rename": true,
 		"no-output-rename": true,
 		"use-life-cycle-interface": true,

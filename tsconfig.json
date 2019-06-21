@@ -9,6 +9,10 @@
 		"moduleResolution": "node",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
+		/* the next few would also be included in "strict: true" */
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
 		"importHelpers": true,
 		"target": "es5",
 		"typeRoots": [
