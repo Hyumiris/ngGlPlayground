@@ -1,4 +1,10 @@
 
+### Todo
+
+Lighting
+
+### Problem of data structuring
+
 ## Information:
 
 model - The concept of one object
