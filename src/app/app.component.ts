@@ -5,7 +5,7 @@ import { mat4, vec3, vec4 } from 'gl-matrix';
 import { interval } from 'rxjs';
 import { tap, startWith, map, flatMap } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
-import { TypedArray } from './types/types';
+import { TypedArray, SIZE_VERTEX_DATA, SIZE_FLOAT, IVertexData } from './types/types';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -97,6 +97,7 @@ export class AppComponent implements OnInit {
 		this.gl.enable(WebGLRenderingContext.DEPTH_TEST);
 
 		// create buffer
+		let vertexData: IVertexData[];
 		let vertexArray: Float32Array;
 		const vertexBuffer = this.gl.createBuffer();
 		if (!vertexBuffer) { throw new Error('couldn\'t create buffer object'); }
@@ -105,9 +106,10 @@ export class AppComponent implements OnInit {
 		const refreshFrequency = 40;
 		const roundTime = 8000;
 		this.stl.loadModel('/assets/models/false-knight.stl').pipe(
-			map(vertexData => vertexData.map(vd => this.concatenate(Float32Array, vd.position, vd.normal))),
+			tap(vd => vertexData = vd),
+			map(() => vertexData.map(vd => this.concatenate(Float32Array, vd.position, vd.normal))),
 			map(mappedData => this.concatenate(Float32Array, mappedData)),
-			tap(vertices => vertexArray = vertices),
+			tap(concatenatedData => vertexArray = concatenatedData),
 			tap(() => this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertexArray, WebGLRenderingContext.STATIC_DRAW)),
 			flatMap(() => interval(refreshFrequency).pipe(startWith(-1))),
 			tap((i: number) => {
@@ -121,11 +123,11 @@ export class AppComponent implements OnInit {
 				// setup attributes
 				const aPositionLocation = this.gl.getAttribLocation(program, 'position');
 				this.gl.enableVertexAttribArray(aPositionLocation);
-				this.gl.vertexAttribPointer(aPositionLocation, 3, WebGLRenderingContext.FLOAT, false, 6 * 4, 0);
+				this.gl.vertexAttribPointer(aPositionLocation, 3, WebGLRenderingContext.FLOAT, false, SIZE_VERTEX_DATA, 0);
 
 				const aNormalLocation = this.gl.getAttribLocation(program, 'normal');
 				this.gl.enableVertexAttribArray(aNormalLocation);
-				this.gl.vertexAttribPointer(aNormalLocation, 3, WebGLRenderingContext.FLOAT, false, 6 * 4, 3 * 4);
+				this.gl.vertexAttribPointer(aNormalLocation, 3, WebGLRenderingContext.FLOAT, false, SIZE_VERTEX_DATA, 3 * SIZE_FLOAT);
 
 				// setup uniforms
 				const view = mat4.create();
@@ -145,7 +147,7 @@ export class AppComponent implements OnInit {
 				this.gl.uniformMatrix4fv(viewProjectionLocation, false, viewProjection);
 
 				// draw
-				this.gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, (vertexArray.length / 6));
+				this.gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, vertexData.length);
 			})
 		).subscribe();
 	}

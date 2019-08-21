@@ -6,7 +6,7 @@ export type TypedArray = Int8Array | Int16Array | Int32Array
 
 
 export const SIZE_FLOAT = 4;
-export const SIZE_VERTEX_DATA = 6;
+export const SIZE_VERTEX_DATA = 6 * SIZE_FLOAT;
 export interface IVertexData {
 	position: vec3;
 	/** normalized normal vector */
