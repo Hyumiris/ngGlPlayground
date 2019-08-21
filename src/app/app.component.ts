@@ -5,6 +5,12 @@ import { mat4, vec3, vec4 } from 'gl-matrix';
 import { interval } from 'rxjs';
 import { tap, startWith } from 'rxjs/operators';
 
+//
+// ts: [name: (number | string)]: any is not accepted even though number or string is allowed
+//
+// An index signature parameter type cannot be a type alias. Consider writing '[index: number]: IVertexData[]' instead.ts(1336)
+//
+
 @Component({
 	selector: 'glp-root',
 	templateUrl: './app.component.html',
@@ -66,14 +72,14 @@ export class AppComponent implements OnInit {
 		this.gl.attachShader(program, fragShader);
 		this.gl.linkProgram(program);
 
-		if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+		if (!this.gl.getProgramParameter(program, WebGLRenderingContext.LINK_STATUS)) {
 			const failInfo = this.gl.getProgramInfoLog(program);
 			throw new Error('Could not compile WebGL program:\n\n' + failInfo);
 		}
 
 		// use program
 		this.gl.useProgram(program);
-		this.gl.enable(this.gl.DEPTH_TEST);
+		this.gl.enable(WebGLRenderingContext.DEPTH_TEST);
 
 		// create buffer
 		const vertexArray = this.concatenate(Float32Array,
@@ -82,8 +88,8 @@ export class AppComponent implements OnInit {
 		);
 		const vertexBuffer = this.gl.createBuffer();
 		if (!vertexBuffer) { throw new Error('couldn\'t create buffer object'); }
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-		this.gl.bufferData(this.gl.ARRAY_BUFFER, vertexArray, this.gl.STATIC_DRAW);
+		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, vertexBuffer);
+		this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertexArray, WebGLRenderingContext.STATIC_DRAW);
 
 		const refreshFrequency = 50;
 		const roundTime = 5000;
@@ -95,12 +101,12 @@ export class AppComponent implements OnInit {
 				this.resize(this.gl.canvas);
 				this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
 				this.gl.clearColor(0.8, 0.9, 1.0, 1.0);
-				this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+				this.gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
 
 				// setup attributes
 				const aPositionLocation = this.gl.getAttribLocation(program, 'position');
 				this.gl.enableVertexAttribArray(aPositionLocation);
-				this.gl.vertexAttribPointer(aPositionLocation, 4, this.gl.FLOAT, false, 0, 0);
+				this.gl.vertexAttribPointer(aPositionLocation, 4, WebGLRenderingContext.FLOAT, false, 0, 0);
 
 				// setup uniforms
 				const view = mat4.create();
@@ -120,7 +126,8 @@ export class AppComponent implements OnInit {
 				const viewProjectionLocation = this.gl.getUniformLocation(program, 'view_projection');
 				this.gl.uniformMatrix4fv(viewProjectionLocation, false, viewProjection);
 
-				this.gl.drawArrays(this.gl.TRIANGLES, 0, (vertexArray.length / 4));
+				// draw
+				this.gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, (vertexArray.length / 4));
 			})
 		).subscribe();
 	}
