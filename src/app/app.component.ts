@@ -3,13 +3,26 @@ import { VOID_VERTEX_SHADER } from './shaders/void.vert';
 import { RAINBOW_FRAGMENT_SHADER } from './shaders/rainbow.frag';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { interval } from 'rxjs';
-import { tap, startWith } from 'rxjs/operators';
+import { tap, startWith, map, flatMap } from 'rxjs/operators';
+import { StlService } from './services/stl.service';
+import { TypedArray } from './types/types';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
 //
 // An index signature parameter type cannot be a type alias. Consider writing '[index: number]: IVertexData[]' instead.ts(1336)
 //
+
+function rotate(out: vec3, point: vec3, axis: vec3, angle: number): vec3 {
+	const result = vec4.fromValues(point[0], point[1], point[2], 1.0);
+	const rotationMatrix = mat4.create();
+	mat4.rotate(rotationMatrix, rotationMatrix, angle, axis);
+	vec4.transformMat4(result, result, rotationMatrix);
+	out[0] = result[0];
+	out[1] = result[1];
+	out[2] = result[2];
+	return out;
+}
 
 @Component({
 	selector: 'glp-root',
@@ -30,7 +43,9 @@ export class AppComponent implements OnInit {
 	private get gl() { if (!this._glContext) { throw new Error('no glContext'); } return this._glContext; }
 	private set gl(context: WebGLRenderingContext) { this._glContext = context; }
 
-	constructor() { }
+	constructor(
+		private stl: StlService
+	) { }
 
 	public ngOnInit() {
 		if (!this.canvasRef) { throw new Error('canvasRef not accessible'); }
@@ -82,19 +97,19 @@ export class AppComponent implements OnInit {
 		this.gl.enable(WebGLRenderingContext.DEPTH_TEST);
 
 		// create buffer
-		const vertexArray = this.concatenate(Float32Array,
-			this.createBox(1.0, 3.0, 1.0),
-			this.createBox(1.5, 1.5, 1.5)
-		);
+		let vertexArray: Float32Array;
 		const vertexBuffer = this.gl.createBuffer();
 		if (!vertexBuffer) { throw new Error('couldn\'t create buffer object'); }
 		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, vertexBuffer);
-		this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertexArray, WebGLRenderingContext.STATIC_DRAW);
 
-		const refreshFrequency = 50;
-		const roundTime = 5000;
-		interval(refreshFrequency).pipe(
-			startWith(-1),
+		const refreshFrequency = 40;
+		const roundTime = 8000;
+		this.stl.loadModel('/assets/models/false-knight.stl').pipe(
+			map(vertexData => vertexData.map(vd => this.concatenate(Float32Array, vd.position, vd.normal))),
+			map(mappedData => this.concatenate(Float32Array, mappedData)),
+			tap(vertices => vertexArray = vertices),
+			tap(() => this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertexArray, WebGLRenderingContext.STATIC_DRAW)),
+			flatMap(() => interval(refreshFrequency).pipe(startWith(-1))),
 			tap((i: number) => {
 				const percent = ((refreshFrequency * (i + 1)) / roundTime) % 1;
 
@@ -106,19 +121,22 @@ export class AppComponent implements OnInit {
 				// setup attributes
 				const aPositionLocation = this.gl.getAttribLocation(program, 'position');
 				this.gl.enableVertexAttribArray(aPositionLocation);
-				this.gl.vertexAttribPointer(aPositionLocation, 4, WebGLRenderingContext.FLOAT, false, 0, 0);
+				this.gl.vertexAttribPointer(aPositionLocation, 3, WebGLRenderingContext.FLOAT, false, 6 * 4, 0);
+
+				const aNormalLocation = this.gl.getAttribLocation(program, 'normal');
+				this.gl.enableVertexAttribArray(aNormalLocation);
+				this.gl.vertexAttribPointer(aNormalLocation, 3, WebGLRenderingContext.FLOAT, false, 6 * 4, 3 * 4);
 
 				// setup uniforms
 				const view = mat4.create();
-				const eye = vec3.fromValues(0, 2, 10);
+				const eye = vec3.fromValues(0, -400, 0);
 				const center = vec3.fromValues(0, 0, 0);
-				const up = vec3.fromValues(0, 1, 0);
-				vec3.rotateY(eye, eye, vec3.fromValues(0, 0, 0), 3.141592 * percent);
-
+				const up = vec3.fromValues(0, 0, 1);
+				rotate(eye, eye, up, 3.141592 * 2 * percent);
 				mat4.lookAt(view, eye, center, up);
 
 				const projection = mat4.create();
-				mat4.perspective(projection, 45 * (3.141592 / 180), this.gl.drawingBufferWidth / this.gl.drawingBufferHeight, 0.1, 20.0);
+				mat4.perspective(projection, 45 * (3.141592 / 180), this.gl.drawingBufferWidth / this.gl.drawingBufferHeight, 0.1, 800.0);
 
 				const viewProjection = mat4.create();
 				mat4.multiply(viewProjection, projection, view);
@@ -127,7 +145,7 @@ export class AppComponent implements OnInit {
 				this.gl.uniformMatrix4fv(viewProjectionLocation, false, viewProjection);
 
 				// draw
-				this.gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, (vertexArray.length / 4));
+				this.gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, (vertexArray.length / 6));
 			})
 		).subscribe();
 	}
@@ -156,14 +174,14 @@ export class AppComponent implements OnInit {
 		const hh = height / 2;
 		const dh = depth / 2;
 
-		const ltf = vec4.fromValues(-wh, hh, dh, 1);
-		const rtf = vec4.fromValues(wh, hh, dh, 1);
-		const rbf = vec4.fromValues(wh, -hh, dh, 1);
-		const lbf = vec4.fromValues(-wh, -hh, dh, 1);
-		const ltb = vec4.fromValues(-wh, hh, -dh, 1);
-		const rtb = vec4.fromValues(wh, hh, -dh, 1);
-		const rbb = vec4.fromValues(wh, -hh, -dh, 1);
-		const lbb = vec4.fromValues(-wh, -hh, -dh, 1);
+		const ltf = vec3.fromValues(-wh, hh, dh);
+		const rtf = vec3.fromValues(wh, hh, dh);
+		const rbf = vec3.fromValues(wh, -hh, dh);
+		const lbf = vec3.fromValues(-wh, -hh, dh);
+		const ltb = vec3.fromValues(-wh, hh, -dh);
+		const rtb = vec3.fromValues(wh, hh, -dh);
+		const rbb = vec3.fromValues(wh, -hh, -dh);
+		const lbb = vec3.fromValues(-wh, -hh, -dh);
 
 		return this.concatenate(
 			Float32Array,
@@ -188,21 +206,25 @@ export class AppComponent implements OnInit {
 		);
 	}
 
-	private concatenate<T extends Int8Array
-		| Uint8Array
-		| Int16Array
-		| Uint16Array
-		| Int32Array
-		| Uint32Array
-		| Uint8ClampedArray
-		| Float32Array
-		| Float64Array>(type: (new (length: number) => T), ...arrays: Array<T>) {
-		const totalLength = arrays.reduce((total, arr) => total + arr.length, 0);
+	private concatenate<T extends TypedArray>(type: (new (length: number) => T), first?: Array<T> | T, ...rest: Array<T>) {
+		if (!first) { return new type(0); }
+		const firstLength = (first instanceof Array) ? first.reduce((total, arr) => total + arr.length, 0) : first.length;
+		const restLength = rest.reduce((total, arr) => total + arr.length, 0);
+		const totalLength = firstLength + restLength;
 		const result = new type(totalLength);
-		arrays.reduce((offset, arr) => {
+
+		if (first instanceof Array) {
+			first.reduce((offset, arr) => {
+				result.set(arr, offset);
+				return offset + arr.length;
+			}, 0);
+		} else {
+			result.set(first, 0);
+		}
+		rest.reduce((offset, arr) => {
 			result.set(arr, offset);
 			return offset + arr.length;
-		}, 0);
+		}, firstLength);
 		return result;
 	}
 }
