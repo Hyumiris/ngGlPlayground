@@ -1,11 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body {
+	width: 100%;
 	height: 100%;
 	overflow: hidden;
 	padding: 0px;
 	margin: 0px;
 }
+
+/* raw properties */
+
+.size-100 {
+	width: 100%;
+	height: 100%;
+}
+
+/* Flex container */
 
 .flex-row {
 	display: flex;
@@ -21,11 +31,18 @@ html, body {
 	align-items: center;
 }
 
+.flex-justify-center {
+	justify-content: center;
+}
+
+/* flex-items */
+
 .flex-grow {
 	flex: 1 0 0;
 }
 
-.size-100 {
-	width: 100%;
-	height: 100%;
+/* padding and margin */
+
+.p-m {
+	padding: 12px;
 }
