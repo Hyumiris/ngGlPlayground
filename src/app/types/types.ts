@@ -12,3 +12,7 @@ export interface IVertexData {
 	/** normalized normal vector */
 	normal: vec3;
 }
+
+export type ModelData = IVertexData[];
+export type ModelID = number;
+export type InstanceID = number;

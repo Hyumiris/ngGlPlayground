@@ -3,9 +3,11 @@ import { VOID_VERTEX_SHADER } from './shaders/void.vert';
 import { RAINBOW_FRAGMENT_SHADER } from './shaders/rainbow.frag';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { interval } from 'rxjs';
-import { tap, startWith, map, flatMap } from 'rxjs/operators';
+import { tap, startWith, map, flatMap, filter } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
-import { TypedArray, SIZE_VERTEX_DATA, SIZE_FLOAT, IVertexData } from './types/types';
+import { SIZE_VERTEX_DATA, SIZE_FLOAT, IVertexData } from './types/types';
+import { ModelRenderer } from './types/ModelRenderer';
+import { concatenate, rotate } from './helper/glMatrixHelper';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -13,16 +15,10 @@ import { TypedArray, SIZE_VERTEX_DATA, SIZE_FLOAT, IVertexData } from './types/t
 // An index signature parameter type cannot be a type alias. Consider writing '[index: number]: IVertexData[]' instead.ts(1336)
 //
 
-function rotate(out: vec3, point: vec3, axis: vec3, angle: number): vec3 {
-	const result = vec4.fromValues(point[0], point[1], point[2], 1.0);
-	const rotationMatrix = mat4.create();
-	mat4.rotate(rotationMatrix, rotationMatrix, angle, axis);
-	vec4.transformMat4(result, result, rotationMatrix);
-	out[0] = result[0];
-	out[1] = result[1];
-	out[2] = result[2];
-	return out;
-}
+Object.assign(window, {
+	modelRenderer: new ModelRenderer(),
+	mat4
+});
 
 @Component({
 	selector: 'glp-root',
@@ -33,7 +29,7 @@ function rotate(out: vec3, point: vec3, axis: vec3, angle: number): vec3 {
 	}
 })
 export class AppComponent implements OnInit {
-	@ViewChild('canvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
+	@ViewChild('canvas', { static: true }) private canvasRef?: ElementRef<HTMLCanvasElement>;
 
 	private _canvas?: HTMLCanvasElement;
 	private get canvas() { if (!this._canvas) { throw new Error('no glContext'); } return this._canvas; }
@@ -43,9 +39,11 @@ export class AppComponent implements OnInit {
 	private get gl() { if (!this._glContext) { throw new Error('no glContext'); } return this._glContext; }
 	private set gl(context: WebGLRenderingContext) { this._glContext = context; }
 
+	private renderingActive = true;
+
 	constructor(
 		private stl: StlService
-	) { }
+	) { (window as any).appComponent = this; }
 
 	public ngOnInit() {
 		if (!this.canvasRef) { throw new Error('canvasRef not accessible'); }
@@ -53,6 +51,12 @@ export class AppComponent implements OnInit {
 		const glContext = this.canvas.getContext('webgl');
 		if (!glContext) { throw new Error('couldn\'t create gl context'); }
 		this.gl = glContext;
+
+		document.addEventListener('keydown', evt => {
+			if (evt.key === ' ') {
+				this.renderingActive = !this.renderingActive;
+			}
+		});
 
 		this.setupGl();
 	}
@@ -104,18 +108,19 @@ export class AppComponent implements OnInit {
 		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, vertexBuffer);
 
 		const refreshFrequency = 40;
-		const roundTime = 8000;
-		this.stl.loadModel('/assets/models/false-knight.stl').pipe(
+		const roundTime = 6000;
+		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
 			tap(vd => vertexData = vd),
-			map(() => vertexData.map(vd => this.concatenate(Float32Array, vd.position, vd.normal))),
-			map(mappedData => this.concatenate(Float32Array, mappedData)),
+			map(() => vertexData.map(vd => concatenate(Float32Array, vd.position, vd.normal))),
+			map(mappedData => concatenate(Float32Array, mappedData)),
 			tap(concatenatedData => vertexArray = concatenatedData),
 			tap(() => this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertexArray, WebGLRenderingContext.STATIC_DRAW)),
 			flatMap(() => interval(refreshFrequency).pipe(startWith(-1))),
+			filter(() => this.renderingActive),
 			tap((i: number) => {
 				const percent = ((refreshFrequency * (i + 1)) / roundTime) % 1;
 
-				this.resize(this.gl.canvas);
+				if (this.gl.canvas instanceof HTMLCanvasElement) { this.resize(this.gl.canvas); }
 				this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
 				this.gl.clearColor(0.8, 0.9, 1.0, 1.0);
 				this.gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
@@ -131,7 +136,7 @@ export class AppComponent implements OnInit {
 
 				// setup uniforms
 				const view = mat4.create();
-				const eye = vec3.fromValues(0, -400, 0);
+				const eye = vec3.fromValues(0, -450, 100);
 				const center = vec3.fromValues(0, 0, 0);
 				const up = vec3.fromValues(0, 0, 1);
 				rotate(eye, eye, up, 3.141592 * 2 * percent);
@@ -157,76 +162,5 @@ export class AppComponent implements OnInit {
 		const displayHeight = Math.floor(canvas.clientHeight * devicePixelRatio);
 		if (canvas.width !== displayWidth) { canvas.width = displayWidth; }
 		if (canvas.height !== displayHeight) { canvas.height = displayHeight; }
-	}
-
-	private createSquare(left: number, right: number, top: number, bottom: number, z: number) {
-		return new Float32Array([
-			left, top, z, 1.0,
-			right, top, z, 1.0,
-			right, bottom, z, 1.0,
-			// -------------------
-			left, top, z, 1.0,
-			right, bottom, z, 1.0,
-			left, bottom, z, 1.0
-		]);
-	}
-
-	private createBox(width: number, height: number, depth: number) {
-		const wh = width / 2;
-		const hh = height / 2;
-		const dh = depth / 2;
-
-		const ltf = vec3.fromValues(-wh, hh, dh);
-		const rtf = vec3.fromValues(wh, hh, dh);
-		const rbf = vec3.fromValues(wh, -hh, dh);
-		const lbf = vec3.fromValues(-wh, -hh, dh);
-		const ltb = vec3.fromValues(-wh, hh, -dh);
-		const rtb = vec3.fromValues(wh, hh, -dh);
-		const rbb = vec3.fromValues(wh, -hh, -dh);
-		const lbb = vec3.fromValues(-wh, -hh, -dh);
-
-		return this.concatenate(
-			Float32Array,
-			// front side
-			ltf, rtf, rbf,
-			rbf, lbf, ltf,
-			// back side
-			ltb, rtb, rbb,
-			rbb, lbb, ltb,
-			// right side
-			rtf, rtb, rbb,
-			rbb, rbf, rtf,
-			// left side
-			ltf, ltb, lbb,
-			lbb, lbf, ltf,
-			// top side
-			rtf, ltf, ltb,
-			ltb, rtb, rtf,
-			// bottom side
-			rbf, lbf, lbb,
-			lbb, rbb, rbf
-		);
-	}
-
-	private concatenate<T extends TypedArray>(type: (new (length: number) => T), first?: Array<T> | T, ...rest: Array<T>) {
-		if (!first) { return new type(0); }
-		const firstLength = (first instanceof Array) ? first.reduce((total, arr) => total + arr.length, 0) : first.length;
-		const restLength = rest.reduce((total, arr) => total + arr.length, 0);
-		const totalLength = firstLength + restLength;
-		const result = new type(totalLength);
-
-		if (first instanceof Array) {
-			first.reduce((offset, arr) => {
-				result.set(arr, offset);
-				return offset + arr.length;
-			}, 0);
-		} else {
-			result.set(first, 0);
-		}
-		rest.reduce((offset, arr) => {
-			result.set(arr, offset);
-			return offset + arr.length;
-		}, firstLength);
-		return result;
 	}
 }
