@@ -41,3 +41,24 @@ export function rotate(out: vec3, point: vec3, axis: vec3, angle: number): vec3 
 	out[2] = result[2];
 	return out;
 }
+
+export function createCupid(minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number) {
+	const _xyz = vec3.fromValues(minX, minY, minZ);
+	const _xyZ = vec3.fromValues(minX, minY, maxZ);
+	const _xYz = vec3.fromValues(minX, maxY, minZ);
+	const _xYZ = vec3.fromValues(minX, maxY, maxZ);
+	const _Xyz = vec3.fromValues(maxX, minY, minZ);
+	const _XyZ = vec3.fromValues(maxX, minY, maxZ);
+	const _XYz = vec3.fromValues(maxX, maxY, minZ);
+	const _XYZ = vec3.fromValues(maxX, maxY, maxZ);
+
+	// x:-, y:|, z:•
+	return concatenate(Float32Array,
+		_xyz, _xyZ, _XyZ, _XyZ, _Xyz, _xyz, // bottom
+		_xYz, _xYZ, _XYZ, _XYZ, _XYz, _xYz, // top
+		_xYz, _xyz, _xyZ, _xyZ, _xYZ, _xYz, // left
+		_XYz, _Xyz, _XyZ, _XyZ, _XYZ, _XYz, // right
+		_xYz, _xyz, _Xyz, _Xyz, _XYz, _xYz, // back
+		_xYZ, _xyZ, _XyZ, _XyZ, _XYZ, _xYZ, // front
+	);
+}
