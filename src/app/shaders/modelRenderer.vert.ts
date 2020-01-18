@@ -11,6 +11,6 @@ varying vec3 v_color;
 
 void main() {
 	v_color = normal;
-	gl_Position = modelMatrices[int(instanceIndex)] * viewProjection * vec4(position, 1.0);
+	gl_Position = viewProjection * modelMatrices[int(instanceIndex)] * vec4(position, 1.0);
 }
 `;
