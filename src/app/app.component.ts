@@ -67,8 +67,17 @@ export class AppComponent implements OnInit {
 		const refreshFrequency = 40;
 		const roundTime = 6000;
 		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
-			map(vd => modelRenderer.createModel(vd)),
-			tap(modelID => modelRenderer.createInstance(modelID, mat4.create())),
+			tap(m => {
+				const modelID = modelRenderer.createModel(m.vertices);
+				const modelMatrix = mat4.create();
+				// left-facing to front-facing
+				mat4.rotateY(modelMatrix, modelMatrix, -3.141592 / 2);
+				// z-up to y-up
+				mat4.rotateX(modelMatrix, modelMatrix, -3.141592 / 2);
+				// center model
+				mat4.translate(modelMatrix, modelMatrix, [-(m.X.max + m.X.min) / 2, -(m.Y.max + m.Y.min) / 2, -(m.Z.max + m.Z.min) / 2, 0]);
+				modelRenderer.createInstance(modelID, modelMatrix);
+			}),
 			flatMap(() => interval(refreshFrequency).pipe(startWith(-1))),
 			filter(() => this.renderingActive),
 			tap((i: number) => {
@@ -76,9 +85,9 @@ export class AppComponent implements OnInit {
 
 				// setup viewProjection
 				const view = mat4.create();
-				const eye = vec3.fromValues(0, -450, 100);
+				const eye = vec3.fromValues(0, 150, 400);
 				const center = vec3.fromValues(0, 0, 0);
-				const up = vec3.fromValues(0, 0, 1);
+				const up = vec3.fromValues(0, 1, 0);
 				rotate(eye, eye, up, 3.141592 * 2 * percent);
 				mat4.lookAt(view, eye, center, up);
 
