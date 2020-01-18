@@ -1,4 +1,4 @@
-export const RAINBOW_FRAGMENT_SHADER =
+export const MODEL_RENDERER_FRAGMENT_SHADER =
 `
 varying highp vec3 v_color;
 

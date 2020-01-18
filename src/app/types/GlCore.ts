@@ -9,6 +9,7 @@ export class GlCore {
 	private gl: WebGLRenderingContext;
 	private shaders: { [name: string]: WebGLShader; } = {};
 	private programs: { [name: string]: WebGLProgram } = {};
+	private buffer: { [name: string]: WebGLBuffer } = {};
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
@@ -140,6 +141,17 @@ export class GlCore {
 		this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
 		this.gl.clearColor(color[0], color[1], color[2], 1.0);
 		this.gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
+	}
+
+	public createBuffer(name: string) {
+		if (name in this.buffer) { throw new Error(`buffer with name '${name}' does already exist`); }
+		const buffer = this.gl.createBuffer();
+		if (!buffer) { throw new Error('failed to create the buffer'); }
+		this.buffer[name] = buffer;
+	}
+
+	public bindBuffer(name: string) {
+		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, this.buffer[name]);
 	}
 
 	public setBufferDataStaticDraw(data: TypedArray) {

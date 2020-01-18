@@ -3,6 +3,8 @@ import { ModelID, InstanceID, ModelData, SIZE_FLOAT } from './types';
 import { GlModule } from './GlModule';
 import { ProgramName } from './GlCore';
 import { concatenate } from '../helper/glMatrixHelper';
+import { MODEL_RENDERER_VERTEX_SHADER } from '../shaders/modelRenderer.vert';
+import { MODEL_RENDERER_FRAGMENT_SHADER } from '../shaders/modelRenderer.frag';
 
 /*
 Data Layout:
@@ -12,8 +14,11 @@ vec3 - normal
 float - instanceIndex
 */
 
+const BYTES_OF_FLOAT = 4;
+/** how many floats form one mat4 */
 const MAT4LENGTH = mat4.create().length;
-const VERTEXDATALENGTH = concatenate(Float32Array, vec3.create(), vec3.create(), new Float32Array(1)).length;
+/** how many byte encompasses the data for one vertex */
+const VERTEXDATALENGTH = BYTES_OF_FLOAT * concatenate(Float32Array, vec3.create(), vec3.create(), new Float32Array(1)).length;
 
 interface IModelInstance {
 	modelID: ModelID;
@@ -112,11 +117,17 @@ class VertexDataArray {
 }
 
 class GlModelRendererModule extends GlModule {
+	private modelRendererProgram!: ProgramName;
+	private modelRendererBuffer!: string;
 	private models: ModelData[] = [];
 	private instances: ModelID[] = [];
 	private instanceMatrices = new InstanceMatrixArray(100);
 	private vertexData = new VertexDataArray();
-	private modelRendererProgram!: ProgramName;
+	private viewProjection = mat4.multiply(
+		mat4.create(),
+		mat4.perspective(mat4.create(), 45 * (3.141592 / 180), 16 / 9, 0.1, 800.0),
+		mat4.lookAt(mat4.create(), vec3.fromValues(0, 100, 450), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0))
+	);
 
 
 	constructor(private clearColor?: vec3) { super(); }
@@ -176,20 +187,30 @@ class GlModelRendererModule extends GlModule {
 		this.instanceMatrices.setInstanceMatrix(instance, instanceMatrix);
 	}
 
+	public setViewProjection(viewProjection: mat4) {
+		this.viewProjection = viewProjection;
+	}
+
 	// ===== GlModule hooks
 
 	protected setup() {
 		if (!this.modelRendererProgram) {
-			this.core.createShader('modelRendererVertexShader', WebGLRenderingContext.VERTEX_SHADER, '');
-			this.core.createShader('modelRendererFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, '');
+			this.core.createShader('modelRendererVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
+			this.core.createShader('modelRendererFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
 			this.core.createProgram('modelRendererProgram', 'modelRendererVertexShader', 'modelRendererFragmentShader');
 			this.modelRendererProgram = 'modelRendererProgram';
+		}
+		if (!this.modelRendererBuffer) {
+			this.core.createBuffer('modelRendererBuffer');
+			this.modelRendererBuffer = 'modelRendererBuffer';
 		}
 	}
 
 	public nextFrame() {
 		this.core.useProgram(this.modelRendererProgram);
 		this.core.enable(WebGLRenderingContext.DEPTH_TEST);
+
+		this.core.bindBuffer(this.modelRendererBuffer);
 
 		if (this.clearColor) { this.core.clearViewport(this.clearColor); }
 
@@ -203,6 +224,7 @@ class GlModelRendererModule extends GlModule {
 		this.core.setVertexAttribPointer(this.modelRendererProgram, 'instanceIndex', 1, WebGLRenderingContext.FLOAT, false, VERTEXDATALENGTH, 6 * SIZE_FLOAT);
 
 		this.core.setUniformMatrix(this.modelRendererProgram, 'modelMatrices', 4, this.instanceMatrices.getData());
+		this.core.setUniformMatrix(this.modelRendererProgram, 'viewProjection', 4, this.viewProjection);
 
 		this.core.drawArrays(WebGLRenderingContext.TRIANGLES, 0, vertexDataObj.numVertices);
 	}
