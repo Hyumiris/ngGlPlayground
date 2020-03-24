@@ -69,6 +69,7 @@ export class AppComponent implements OnInit {
 		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
 			tap(m => {
 				const modelID = modelRenderer.createModel(m.vertices);
+
 				const modelMatrix = mat4.create();
 				// left-facing to front-facing
 				mat4.rotateY(modelMatrix, modelMatrix, -3.141592 / 2);
@@ -77,6 +78,17 @@ export class AppComponent implements OnInit {
 				// center model
 				mat4.translate(modelMatrix, modelMatrix, [-(m.X.max + m.X.min) / 2, -(m.Y.max + m.Y.min) / 2, -(m.Z.max + m.Z.min) / 2, 0]);
 				modelRenderer.createInstance(modelID, modelMatrix);
+
+				const modelMatrix2 = mat4.create();
+				// move to the right
+				mat4.translate(modelMatrix2, modelMatrix2, [20, 0, 0]);
+				// left-facing to front-facing
+				mat4.rotateY(modelMatrix2, modelMatrix2, -3.141592 / 2);
+				// z-up to y-up
+				mat4.rotateX(modelMatrix2, modelMatrix2, -3.141592 / 2);
+				// center model
+				mat4.translate(modelMatrix2, modelMatrix2, [-(m.X.max + m.X.min) / 2, -(m.Y.max + m.Y.min) / 2, -(m.Z.max + m.Z.min) / 2, 0]);
+				modelRenderer.createInstance(modelID, modelMatrix2);
 			}),
 			flatMap(() => interval(refreshFrequency).pipe(startWith(-1))),
 			filter(() => this.renderingActive),
