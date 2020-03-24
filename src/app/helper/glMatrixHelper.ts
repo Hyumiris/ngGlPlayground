@@ -42,7 +42,7 @@ export function rotate(out: vec3, point: vec3, axis: vec3, angle: number): vec3 
 	return out;
 }
 
-export function createCupid(minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number) {
+export function createCuboid(minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number) {
 	const _xyz = vec3.fromValues(minX, minY, minZ);
 	const _xyZ = vec3.fromValues(minX, minY, maxZ);
 	const _xYz = vec3.fromValues(minX, maxY, minZ);

@@ -27,7 +27,7 @@ interface IModelInstance {
 class InstanceMatrixArray {
 	private data: Float32Array = new Float32Array(MAT4LENGTH * this.maxInstances);
 	/** for every position it stores the position that should be written to afterwards */
-	private freeDataSuccessorList: number[] = new Array<number>(this.maxInstances).map((_, i) => (i + 1 !== this.maxInstances) ? i + 1 : -1);
+	private freeDataSuccessorList = new Array<number>(this.maxInstances).fill(0).map((_, i) => (i + 1 !== this.maxInstances) ? i + 1 : -1);
 	/** the first free position that should be written to */
 	private firstFreePos = 0;
 	/** the last position, that is writable */
