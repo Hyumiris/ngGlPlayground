@@ -61,7 +61,7 @@ export class AppComponent implements OnInit {
 	private setupGl() {
 		const core = new GlCore(this.gl);
 		const modelRenderer = new ModelRenderer();
-		modelRenderer.setClearColor(vec3.fromValues(0, 0, 1));
+		modelRenderer.setClearColor(vec3.fromValues(0.3, 0.3, .4));
 		modelRenderer.setupModule(core);
 
 		const refreshFrequency = 40;
@@ -100,6 +100,7 @@ export class AppComponent implements OnInit {
 				const eye = vec3.fromValues(0, 150, 400);
 				const center = vec3.fromValues(0, 0, 0);
 				const up = vec3.fromValues(0, 1, 0);
+				vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * 60, 0]);
 				rotate(eye, eye, up, 3.141592 * 2 * percent);
 				mat4.lookAt(view, eye, center, up);
 

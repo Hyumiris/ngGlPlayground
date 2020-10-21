@@ -220,7 +220,9 @@ class GlModelRendererModule extends GlModule {
 		}
 
 		this.core.setVertexAttribPointer(this.modelRendererProgram, 'position', 3, WebGLRenderingContext.FLOAT, false, VERTEXDATALENGTH, 0);
+		// tslint:disable-next-line: max-line-length
 		this.core.setVertexAttribPointer(this.modelRendererProgram, 'normal', 3, WebGLRenderingContext.FLOAT, false, VERTEXDATALENGTH, 3 * SIZE_FLOAT);
+		// tslint:disable-next-line: max-line-length
 		this.core.setVertexAttribPointer(this.modelRendererProgram, 'instanceIndex', 1, WebGLRenderingContext.FLOAT, false, VERTEXDATALENGTH, 6 * SIZE_FLOAT);
 
 		this.core.setUniformMatrix(this.modelRendererProgram, 'modelMatrices', 4, this.instanceMatrices.getData());
