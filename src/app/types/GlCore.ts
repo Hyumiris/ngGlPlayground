@@ -4,6 +4,16 @@ import { TypedArray } from './types';
 export type ShaderName = string | number;
 export type ProgramName = string | number;
 
+/** possible values:\
+ * BYTE\
+ * SHORT\
+ * UNSIGNED_BYTE\
+ * UNSIGNED_SHORT\
+ * FLOAT
+ */
+// tslint:disable-next-line:max-line-length
+export type GLType = WebGLRenderingContext['BYTE'] | WebGLRenderingContext['SHORT'] | WebGLRenderingContext['UNSIGNED_BYTE'] | WebGLRenderingContext['UNSIGNED_SHORT'] | WebGLRenderingContext['FLOAT'];
+
 export class GlCore {
 
 	private gl: WebGLRenderingContext;
@@ -14,8 +24,6 @@ export class GlCore {
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
 	}
-
-	private rawGL() { return this.gl; }
 
 	public createShader(name: ShaderName, shaderType: number, code: string) {
 		if (name in this.shaders) { throw new Error(`shader with name '${name}' does already exist`); }
@@ -72,15 +80,28 @@ export class GlCore {
 	}
 
 	/**
-	 * @param offset offset in byte
+	 * loads data for vertex attribute from a buffer
+	 * @param program name of the program for which to set the vertex attribute pointer
+	 * @param attributeName name of the attribute
+	 * @param size amount of components of this attribute
+	 * @param type data type of the component(s)
+	 * @param normalized if true BYTE and SHORT get normalized to [-1; 1] and UNSIGNED_BYTE and UNSIGNED_SHORT get normalized to [0; 1]
+	 * @param stride size of one block of date for a single vertex in bytes, 0 means this attribute is tightly packed
+	 * @param offset offset in bytes from the start of the vertex data block
 	 */
 	// tslint:disable-next-line:max-line-length
-	public setVertexAttribPointer(program: ProgramName, attributeName: string, size: number, type: number, normalized: boolean, stride: number, offset: number) {
+	public setVertexAttribPointer(program: ProgramName, attributeName: string, size: number, type: GLType, normalized: boolean, stride: number, offset: number) {
 		const aLocation = this.gl.getAttribLocation(this.programs[program], attributeName);
 		this.gl.enableVertexAttribArray(aLocation);
 		this.gl.vertexAttribPointer(aLocation, size, type, normalized, stride, offset);
 	}
 
+	/**
+	 * @param program name of the program for which to set the uniform
+	 * @param uniform name of the uniform
+	 * @param num number of components that each value consists of
+	 * @param value the actual value(s) to be assigned to the uniform
+	 */
 	public setUniform(program: ProgramName, uniform: string, num: 1 | 2 | 3 | 4, value: Float32Array | Int32Array | number, ..._: number[]) {
 		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
 		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
@@ -112,10 +133,17 @@ export class GlCore {
 		}
 	}
 
+	/**
+	 * @param program name of the program for which to set the uniform
+	 * @param uniform name of the matrix uniform
+	 * @param num num x num is the size of the unifom matrix
+	 * @param values the actual values to be assigned to the uniform
+	 */
 	public setUniformMatrix(program: ProgramName, uniform: string, num: 2 | 3 | 4, values: Float32Array) {
 		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
 		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
 
+		// second param must be false according to docs
 		// this.gl[`uniformMatrix${num}fv`](uniformLocation, false, values);
 		switch (num) {
 			case 2: this.gl.uniformMatrix2fv(uniformLocation, false, values); break;
