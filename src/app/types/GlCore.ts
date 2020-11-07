@@ -1,4 +1,6 @@
 import { vec3 } from 'gl-matrix';
+import { MODEL_RENDERER_FRAGMENT_SHADER } from '../shaders/modelRenderer.frag';
+import { MODEL_RENDERER_VERTEX_SHADER } from '../shaders/modelRenderer.vert';
 import { TypedArray } from './types';
 
 export type ShaderName = string | number;
@@ -12,7 +14,7 @@ export type ProgramName = string | number;
  * FLOAT
  */
 // tslint:disable-next-line:max-line-length
-export type GLType = WebGLRenderingContext['BYTE'] | WebGLRenderingContext['SHORT'] | WebGLRenderingContext['UNSIGNED_BYTE'] | WebGLRenderingContext['UNSIGNED_SHORT'] | WebGLRenderingContext['FLOAT'];
+export type GLDataType = WebGLRenderingContext['BYTE'] | WebGLRenderingContext['SHORT'] | WebGLRenderingContext['UNSIGNED_BYTE'] | WebGLRenderingContext['UNSIGNED_SHORT'] | WebGLRenderingContext['FLOAT'];
 
 export class GlCore {
 
@@ -23,6 +25,18 @@ export class GlCore {
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
+
+		this.createShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
+		this.createShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
+		this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader');
+	}
+
+	public getCanvasWidth() {
+		return this.gl.canvas.width;
+	}
+
+	public getCanvasHeight() {
+		return this.gl.canvas.height;
 	}
 
 	public createShader(name: ShaderName, shaderType: number, code: string) {
@@ -90,7 +104,7 @@ export class GlCore {
 	 * @param offset offset in bytes from the start of the vertex data block
 	 */
 	// tslint:disable-next-line:max-line-length
-	public setVertexAttribPointer(program: ProgramName, attributeName: string, size: number, type: GLType, normalized: boolean, stride: number, offset: number) {
+	public setVertexAttribPointer(program: ProgramName, attributeName: string, size: number, type: GLDataType, normalized: boolean, stride: number, offset: number) {
 		const aLocation = this.gl.getAttribLocation(this.programs[program], attributeName);
 		this.gl.enableVertexAttribArray(aLocation);
 		this.gl.vertexAttribPointer(aLocation, size, type, normalized, stride, offset);
@@ -174,7 +188,7 @@ export class GlCore {
 	public createBuffer(name: string) {
 		if (name in this.buffer) { throw new Error(`buffer with name '${name}' does already exist`); }
 		const buffer = this.gl.createBuffer();
-		if (!buffer) { throw new Error('failed to create the buffer'); }
+		if (!buffer) { throw new Error(`failed to create buffer ${name}`); }
 		this.buffer[name] = buffer;
 	}
 

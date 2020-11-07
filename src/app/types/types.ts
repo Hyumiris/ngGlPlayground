@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 
 export type TypedArray = Int8Array | Int16Array | Int32Array
 	| Uint8ClampedArray | Uint8Array | Uint16Array | Uint32Array
@@ -12,6 +12,9 @@ export interface IVertexData {
 	/** normalized normal vector */
 	normal: vec3;
 }
+
+/** how many floats form one mat4 */
+export const MAT4LENGTH = mat4.create().length;
 
 export type ModelData = IVertexData[];
 export type ModelID = number;
