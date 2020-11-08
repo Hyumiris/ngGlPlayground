@@ -3,7 +3,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import { interval } from 'rxjs';
 import { tap, startWith, map, flatMap, filter } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
-import { ModelRenderer } from './types/ModelRenderer';
+import { ModelRenderer } from './GlModules/ModelRenderer';
 import { rotate } from './helper/glMatrixHelper';
 import { GlCore } from './types/GlCore';
 
@@ -62,7 +62,7 @@ export class AppComponent implements OnInit {
 		const core = new GlCore(this.gl);
 		const modelRenderer = new ModelRenderer();
 		modelRenderer.setClearColor(vec3.fromValues(0.3, 0.3, .4));
-		modelRenderer.setupModule(core);
+		core.registerModule(modelRenderer);
 
 		const refreshFrequency = 40;
 		const roundTime = 6000;

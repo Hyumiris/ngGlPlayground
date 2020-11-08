@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { ModelID, InstanceID, ModelData, SIZE_FLOAT } from './types';
+import { ModelID, InstanceID, ModelData, SIZE_FLOAT } from '../types/types';
 import { GlModule } from './GlModule';
-import { ProgramName } from './GlCore';
+import { ProgramName } from '../types/GlCore';
 import { concatenate } from '../helper/glMatrixHelper';
 import { InstanceMatrixArray } from '../HelperClasses/InstanceMatrixArray';
 import { VertexDataArray } from '../HelperClasses/VertexDataArray';

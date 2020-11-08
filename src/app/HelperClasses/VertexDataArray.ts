@@ -1,6 +1,9 @@
 import { concatenate } from '../helper/glMatrixHelper';
 import { ModelData } from '../types/types';
 
+/**
+ * manages the vertex data that gets stored in the buffer
+ */
 export class VertexDataArray {
 	private vertexDataChanged = false;
 	private vertexData = new Float32Array();

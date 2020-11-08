@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { GlModule } from '../GlModules/GlModule';
 import { MODEL_RENDERER_FRAGMENT_SHADER } from '../shaders/modelRenderer.frag';
 import { MODEL_RENDERER_VERTEX_SHADER } from '../shaders/modelRenderer.vert';
 import { TypedArray } from './types';
@@ -22,6 +23,7 @@ export class GlCore {
 	private shaders: { [name: string]: WebGLShader; } = {};
 	private programs: { [name: string]: WebGLProgram } = {};
 	private buffer: { [name: string]: WebGLBuffer } = {};
+	private modules: GlModule[] = [];
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
@@ -29,6 +31,11 @@ export class GlCore {
 		this.createShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
 		this.createShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
 		this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader');
+	}
+
+	public registerModule(module: GlModule) {
+		module.setupModule(this);
+		this.modules.push(module);
 	}
 
 	public getCanvasWidth() {

@@ -1,4 +1,4 @@
-import { GlCore } from './GlCore';
+import { GlCore } from '../types/GlCore';
 
 export class GlModule {
 
