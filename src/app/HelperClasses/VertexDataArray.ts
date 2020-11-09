@@ -9,11 +9,14 @@ export class VertexDataArray {
 	private vertexData = new Float32Array();
 	private numVertices = 0;
 
+	public getNumVertices() {
+		return this.numVertices;
+	}
+
 	public getData(resetChangedFlag = true) {
 		const retVal = {
 			data: this.vertexData,
-			changed: this.vertexDataChanged,
-			numVertices: this.numVertices
+			changed: this.vertexDataChanged
 		};
 		if (resetChangedFlag) { this.vertexDataChanged = false; }
 		return retVal;

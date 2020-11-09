@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { GlModule } from '../GlModules/GlModule';
+import { VertexDataArray } from '../HelperClasses/VertexDataArray';
 import { MODEL_RENDERER_FRAGMENT_SHADER } from '../shaders/modelRenderer.frag';
 import { MODEL_RENDERER_VERTEX_SHADER } from '../shaders/modelRenderer.vert';
 import { TypedArray } from './types';
@@ -24,6 +25,8 @@ export class GlCore {
 	private programs: { [name: string]: WebGLProgram } = {};
 	private buffer: { [name: string]: WebGLBuffer } = {};
 	private modules: GlModule[] = [];
+	private vertexData: VertexDataArray = new VertexDataArray();
+	private clearColor?: vec3;
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
@@ -31,11 +34,26 @@ export class GlCore {
 		this.createShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
 		this.createShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
 		this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader');
+
+		this.createBuffer('mainBuffer');
 	}
 
 	public registerModule(module: GlModule) {
 		module.setupModule(this);
 		this.modules.push(module);
+	}
+
+	public nextFrame() {
+		this.modules.forEach(module => module.nextFrame());
+
+		if (this.clearColor) { this.clearViewport(this.clearColor); }
+		this.bindBuffer('mainBuffer');
+		const vertexDataObj = this.vertexData.getData();
+		if (vertexDataObj.changed) {
+			this.setBufferDataStaticDraw(vertexDataObj.data);
+		}
+
+		this.drawArrays(WebGLRenderingContext.TRIANGLES, 0, this.vertexData.getNumVertices());
 	}
 
 	public getCanvasWidth() {
@@ -44,6 +62,10 @@ export class GlCore {
 
 	public getCanvasHeight() {
 		return this.gl.canvas.height;
+	}
+
+	public getVertexData() {
+		return this.vertexData;
 	}
 
 	public createShader(name: ShaderName, shaderType: number, code: string) {
@@ -205,6 +227,10 @@ export class GlCore {
 
 	public setBufferDataStaticDraw(data: TypedArray) {
 		this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, WebGLRenderingContext.STATIC_DRAW);
+	}
+
+	public setClearColor(clearColor?: vec3) {
+		this.clearColor = clearColor;
 	}
 
 	/**

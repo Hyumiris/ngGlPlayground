@@ -61,7 +61,7 @@ export class AppComponent implements OnInit {
 	private setupGl() {
 		const core = new GlCore(this.gl);
 		const modelRenderer = new ModelRenderer();
-		modelRenderer.setClearColor(vec3.fromValues(0.3, 0.3, .4));
+		core.setClearColor(vec3.fromValues(0.3, 0.3, .4));
 		core.registerModule(modelRenderer);
 
 		const refreshFrequency = 40;
@@ -112,7 +112,7 @@ export class AppComponent implements OnInit {
 
 				modelRenderer.setViewProjection(viewProjection);
 				core.setResolutionToDisplayResolution();
-				modelRenderer.nextFrame();
+				core.nextFrame();
 			})
 		).subscribe();
 	}
