@@ -4,6 +4,7 @@ import { interval } from 'rxjs';
 import { tap, startWith, map, flatMap, filter } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
+import { CameraModule } from './GlModules/CameraModule';
 import { rotate } from './helper/glMatrixHelper';
 import { GlCore } from './types/GlCore';
 
@@ -60,9 +61,11 @@ export class AppComponent implements OnInit {
 
 	private setupGl() {
 		const core = new GlCore(this.gl);
-		const modelRenderer = new ModelRenderer();
 		core.setClearColor(vec3.fromValues(0.3, 0.3, .4));
+		const modelRenderer = new ModelRenderer();
+		const cameraModule = new CameraModule();
 		core.registerModule(modelRenderer);
+		core.registerModule(cameraModule);
 
 		const refreshFrequency = 40;
 		const roundTime = 6000;
@@ -95,32 +98,17 @@ export class AppComponent implements OnInit {
 			tap((i: number) => {
 				const percent = ((refreshFrequency * (i + 1)) / roundTime) % 1;
 
-				// setup viewProjection
-				const view = mat4.create();
 				const eye = vec3.fromValues(0, 150, 400);
-				const center = vec3.fromValues(0, 0, 0);
-				const up = vec3.fromValues(0, 1, 0);
+				// change height
 				vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * 60, 0]);
-				rotate(eye, eye, up, 3.141592 * 2 * percent);
-				mat4.lookAt(view, eye, center, up);
+				// rotate around center
+				rotate(eye, eye, vec3.fromValues(0, 1, 0), 3.141592 * 2 * percent);
+				cameraModule.setPosition(eye);
+				cameraModule.setDirection(vec3.scale(vec3.create(), eye, -1));
 
-				const projection = mat4.create();
-				mat4.perspective(projection, 45 * (3.141592 / 180), this.gl.drawingBufferWidth / this.gl.drawingBufferHeight, 0.1, 800.0);
-
-				const viewProjection = mat4.create();
-				mat4.multiply(viewProjection, projection, view);
-
-				modelRenderer.setViewProjection(viewProjection);
 				core.setResolutionToDisplayResolution();
 				core.nextFrame();
 			})
 		).subscribe();
-	}
-
-	private resize(canvas: HTMLCanvasElement) {
-		const displayWidth = Math.floor(canvas.clientWidth * devicePixelRatio);
-		const displayHeight = Math.floor(canvas.clientHeight * devicePixelRatio);
-		if (canvas.width !== displayWidth) { canvas.width = displayWidth; }
-		if (canvas.height !== displayHeight) { canvas.height = displayHeight; }
 	}
 }
