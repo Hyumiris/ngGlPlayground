@@ -1,4 +1,4 @@
-import { TypedArray } from '../types/types';
+import { MAT4LENGTH, TypedArray } from '../types/types';
 import { vec4, mat4, vec3 } from 'gl-matrix';
 
 export function concatenate<T extends TypedArray>(type: (new (length: number) => T), first?: Array<T> | T, ...rest: Array<T>) {
@@ -21,6 +21,12 @@ export function concatenate<T extends TypedArray>(type: (new (length: number) =>
 		return offset + arr.length;
 	}, firstLength);
 	return result;
+}
+
+export function toFloat32Array(mats: mat4[]) {
+	const retVal = new Float32Array(MAT4LENGTH * mats.length);
+	mats.forEach((matrix, position) => matrix.forEach((val, idx) => retVal[MAT4LENGTH * position + idx] = val));
+	return retVal;
 }
 
 /**

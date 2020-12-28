@@ -44,6 +44,14 @@ export class GlCore {
 		this.modules.forEach(module => module.nextFrame());
 	}
 
+	/**
+	 * very powerful requesting mechanism to read directly from another module
+	 * TODO: better, encapsulating-friendly method
+	 */
+	public request(source: typeof GlModule, value: string) {
+		return ((this.modules.find((module) => (module instanceof source))) as unknown as { [v: string]: unknown })[value];
+	}
+
 	public getCanvasWidth() {
 		return this.gl.canvas.width;
 	}
@@ -131,6 +139,7 @@ export class GlCore {
 	 */
 	public setUniform(program: ProgramName, uniform: string, num: 1 | 2 | 3 | 4, value: Float32Array | Int32Array | number, ..._: number[]) {
 		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
+		this.useProgram(program);
 		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
 		if (value instanceof Float32Array) {
 			// this.gl[`uniform${num}fv`](uniformLocation, value);
