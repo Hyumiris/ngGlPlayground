@@ -44,9 +44,10 @@ export class GlCore {
 	}
 
 	public nextFrame() {
+		if (this.clearColor) { this.clearViewport(this.clearColor); }
+
 		this.modules.forEach(module => module.nextFrame());
 
-		if (this.clearColor) { this.clearViewport(this.clearColor); }
 		this.bindBuffer('mainBuffer');
 		const vertexDataObj = this.vertexData.getData();
 		if (vertexDataObj.changed) {

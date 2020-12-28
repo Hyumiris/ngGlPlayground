@@ -100,7 +100,7 @@ export class AppComponent implements OnInit {
 
 				const eye = vec3.fromValues(0, 150, 400);
 				// change height
-				vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * 60, 0]);
+				vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * eye[1] * 0.4, 0]);
 				// rotate around center
 				rotate(eye, eye, vec3.fromValues(0, 1, 0), 3.141592 * 2 * percent);
 				cameraModule.setPosition(eye);
