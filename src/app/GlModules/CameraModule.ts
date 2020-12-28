@@ -12,7 +12,7 @@ export class CameraModule extends GlModule {
 	private view: mat4 = mat4.create();
 
 	private position: vec3 = vec3.fromValues(0, 0, 0);
-	private direction: vec3 = vec3.fromValues(1, 0, 0);
+	private center: vec3 = vec3.fromValues(0, 0, 0);
 	private up: vec3 = vec3.fromValues(0, 1, 0);
 
 	private fovy = 45 * (3.141592 / 180);
@@ -24,12 +24,16 @@ export class CameraModule extends GlModule {
 	}
 
 	public setDirection(direction: vec3) {
-		this.direction = direction;
+		vec3.add(this.center, this.position, direction);
+	}
+
+	public setCenter(center: vec3) {
+		this.center = center;
 	}
 
 	private generateViewProjection() {
 		this.view = mat4.create();
-		mat4.lookAt(this.view, this.position, vec3.add(vec3.create(), this.position, this.direction), this.up);
+		mat4.lookAt(this.view, this.position, this.center, this.up);
 
 		this.projection = mat4.create();
 		mat4.perspective(this.projection, this.fovy, this.core.getCanvasWidth() / this.core.getCanvasHeight(), this.nearPlane, this.farPlane);
