@@ -1,10 +1,11 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { interval } from 'rxjs';
-import { tap, startWith, map, flatMap, filter } from 'rxjs/operators';
+import { tap, startWith, flatMap, filter } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
 import { CameraModule } from './GlModules/CameraModule';
+import { LightingModule } from './GlModules/LightingModule';
 import { rotate } from './helper/glMatrixHelper';
 import { GlCore } from './types/GlCore';
 
@@ -64,6 +65,8 @@ export class AppComponent implements OnInit {
 		core.setClearColor(vec3.fromValues(0.3, 0.3, .4));
 		const modelRenderer = new ModelRenderer();
 		const cameraModule = new CameraModule();
+		const lightingModule = new LightingModule();
+		core.registerModule(lightingModule);
 		core.registerModule(cameraModule);
 		core.registerModule(modelRenderer);
 
@@ -100,7 +103,7 @@ export class AppComponent implements OnInit {
 
 				const eye = vec3.fromValues(0, 150, 400);
 				// change height
-				vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * eye[1] * 0.4, 0]);
+				// vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * eye[1] * 0.4, 0]);
 				// rotate around center
 				rotate(eye, eye, vec3.fromValues(0, 1, 0), 3.141592 * 2 * percent);
 				cameraModule.setPosition(eye);

@@ -1,10 +1,9 @@
 import { mat4 } from 'gl-matrix';
-import { MAT4LENGTH } from '../types/types';
 
 /** manages an array of instance matrices */
 export class InstanceMatrixArray {
 	/** the array containng the matrices */
-	private data: Float32Array = new Float32Array(MAT4LENGTH * this.maxInstances);
+	private data = new Array<mat4>(this.maxInstances).fill(mat4.create());
 	/** for every position it stores the position that should be written to afterwards */
 	private freeDataSuccessorList = new Array<number>(this.maxInstances).fill(0).map((_, i) => (i + 1 !== this.maxInstances) ? i + 1 : -1);
 	/** the first free position that should be written to */
@@ -19,8 +18,12 @@ export class InstanceMatrixArray {
 		private readonly maxInstances: number
 	) { }
 
-	public getData() {
+	public getModelMatrices() {
 		return this.data;
+	}
+
+	public getModelViewMatrices(view: mat4) {
+		return this.data.map(model => mat4.multiply(mat4.create(), view, model));
 	}
 
 	/**
@@ -29,7 +32,7 @@ export class InstanceMatrixArray {
 	 * @returns the matrix at position
 	 */
 	public getInstanceMatrix(position: number) {
-		return mat4.fromValues.apply(mat4, this.data.subarray(MAT4LENGTH * position, MAT4LENGTH * (position + 1)));
+		return this.data[position];
 	}
 
 	/**
@@ -38,7 +41,7 @@ export class InstanceMatrixArray {
 	 * @param matrix the new matrix at the given position
 	 */
 	public setInstanceMatrix(position: number, matrix: mat4) {
-		matrix.forEach((val, idx) => this.data[MAT4LENGTH * position + idx] = val);
+		this.data[position] = matrix;
 	}
 
 	/**
@@ -68,9 +71,9 @@ export class InstanceMatrixArray {
 		this.freeDataSuccessorList[position] = -1;
 		if (this.lastFreePos < 0) {
 			this.firstFreePos = position;
-			this.lastFreePos = position;
 		} else {
 			this.freeDataSuccessorList[this.lastFreePos] = position;
 		}
+		this.lastFreePos = position;
 	}
 }

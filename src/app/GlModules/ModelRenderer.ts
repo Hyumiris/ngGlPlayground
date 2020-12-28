@@ -2,7 +2,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import { ModelID, InstanceID, SIZE_FLOAT, IModelData } from '../types/types';
 import { GlModule } from './GlModule';
 import { ProgramName } from '../types/GlCore';
-import { concatenate } from '../helper/glMatrixHelper';
+import { concatenate, toFloat32Array } from '../helper/glMatrixHelper';
 import { InstanceMatrixArray } from '../HelperClasses/InstanceMatrixArray';
 import { VertexDataArray } from '../HelperClasses/VertexDataArray';
 
@@ -27,9 +27,6 @@ class GlModelRendererModule extends GlModule {
 
 	/**
 	 * overwrites the default rendering program
-	 *
-	 * The following attributes should be present in th program:
-	 * - modelMatrices (mat4[100])
 	 * @param renderingProgram the program to be used by this renderer
 	 */
 	public setRenderingProgram(renderingProgram: ProgramName) {
@@ -93,7 +90,10 @@ class GlModelRendererModule extends GlModule {
 		this.core.setVertexAttribPointer(this.modelRendererProgram, 'instanceIndex', 1, WebGLRenderingContext.FLOAT, false, VERTEXDATALENGTH, 6 * SIZE_FLOAT);
 		// tslint:enable: max-line-length
 
-		this.core.setUniformMatrix(this.modelRendererProgram, 'modelMatrices', 4, this.instanceMatrices.getData());
+		const modelMatrices = this.instanceMatrices.getModelMatrices();
+		const normalMatrices = modelMatrices.map(m => mat4.transpose(mat4.create(), mat4.invert(mat4.create(), m) as mat4));
+		this.core.setUniformMatrix(this.modelRendererProgram, 'modelMatrices', 4, toFloat32Array(modelMatrices));
+		this.core.setUniformMatrix(this.modelRendererProgram, 'normalMatrices', 4, toFloat32Array(normalMatrices));
 
 		const vertexDataObj = this.vertexData.getData();
 		if (vertexDataObj.changed) {

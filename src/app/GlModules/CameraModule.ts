@@ -8,7 +8,8 @@ import { GlModule } from './GlModule';
  */
 export class CameraModule extends GlModule {
 
-	private viewProjection: mat4 = mat4.create();
+	private projection: mat4 = mat4.create();
+	private view: mat4 = mat4.create();
 
 	private position: vec3 = vec3.fromValues(0, 0, 0);
 	private direction: vec3 = vec3.fromValues(1, 0, 0);
@@ -26,18 +27,17 @@ export class CameraModule extends GlModule {
 		this.direction = direction;
 	}
 
-	private generateViewProjectionMatrix() {
-		const view = mat4.create();
-		mat4.lookAt(view, this.position, vec3.add(vec3.create(), this.position, this.direction), this.up);
+	private generateViewProjection() {
+		this.view = mat4.create();
+		mat4.lookAt(this.view, this.position, vec3.add(vec3.create(), this.position, this.direction), this.up);
 
-		const projection = mat4.create();
-		mat4.perspective(projection, this.fovy, this.core.getCanvasWidth() / this.core.getCanvasHeight(), this.nearPlane, this.farPlane);
-
-		mat4.multiply(this.viewProjection, projection, view);
+		this.projection = mat4.create();
+		mat4.perspective(this.projection, this.fovy, this.core.getCanvasWidth() / this.core.getCanvasHeight(), this.nearPlane, this.farPlane);
 	}
 
 	public nextFrame() {
-		this.generateViewProjectionMatrix();
-		this.core.setUniformMatrix('mainProgram', 'viewProjection', 4, this.viewProjection);
+		this.generateViewProjection();
+		this.core.setUniformMatrix('mainProgram', 'view', 4, this.view);
+		this.core.setUniformMatrix('mainProgram', 'projection', 4, this.projection);
 	}
 }

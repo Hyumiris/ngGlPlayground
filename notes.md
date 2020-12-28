@@ -1,8 +1,4 @@
 
-### Todo
-
-Lighting
-
 ### Problem of data structuring
 
 ## Information:
