@@ -64,8 +64,8 @@ export class AppComponent implements OnInit {
 		core.setClearColor(vec3.fromValues(0.3, 0.3, .4));
 		const modelRenderer = new ModelRenderer();
 		const cameraModule = new CameraModule();
-		core.registerModule(modelRenderer);
 		core.registerModule(cameraModule);
+		core.registerModule(modelRenderer);
 
 		const refreshFrequency = 40;
 		const roundTime = 6000;

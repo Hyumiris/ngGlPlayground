@@ -23,9 +23,7 @@ export class GlCore {
 	private gl: WebGLRenderingContext;
 	private shaders: { [name: string]: WebGLShader; } = {};
 	private programs: { [name: string]: WebGLProgram } = {};
-	private buffer: { [name: string]: WebGLBuffer } = {};
 	private modules: GlModule[] = [];
-	private vertexData: VertexDataArray = new VertexDataArray();
 	private clearColor?: vec3;
 
 	constructor(gl: WebGLRenderingContext) {
@@ -34,8 +32,6 @@ export class GlCore {
 		this.createShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
 		this.createShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
 		this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader');
-
-		this.createBuffer('mainBuffer');
 	}
 
 	public registerModule(module: GlModule) {
@@ -45,16 +41,7 @@ export class GlCore {
 
 	public nextFrame() {
 		if (this.clearColor) { this.clearViewport(this.clearColor); }
-
 		this.modules.forEach(module => module.nextFrame());
-
-		this.bindBuffer('mainBuffer');
-		const vertexDataObj = this.vertexData.getData();
-		if (vertexDataObj.changed) {
-			this.setBufferDataStaticDraw(vertexDataObj.data);
-		}
-
-		this.drawArrays(WebGLRenderingContext.TRIANGLES, 0, this.vertexData.getNumVertices());
 	}
 
 	public getCanvasWidth() {
@@ -63,10 +50,6 @@ export class GlCore {
 
 	public getCanvasHeight() {
 		return this.gl.canvas.height;
-	}
-
-	public getVertexData() {
-		return this.vertexData;
 	}
 
 	public createShader(name: ShaderName, shaderType: number, code: string) {
@@ -185,6 +168,7 @@ export class GlCore {
 	 */
 	public setUniformMatrix(program: ProgramName, uniform: string, num: 2 | 3 | 4, values: Float32Array) {
 		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
+		this.useProgram(program);
 		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
 
 		// second param must be false according to docs
@@ -215,15 +199,14 @@ export class GlCore {
 		this.gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
 	}
 
-	public createBuffer(name: string) {
-		if (name in this.buffer) { throw new Error(`buffer with name '${name}' does already exist`); }
+	public createBuffer() {
 		const buffer = this.gl.createBuffer();
-		if (!buffer) { throw new Error(`failed to create buffer ${name}`); }
-		this.buffer[name] = buffer;
+		if (!buffer) { throw new Error('failed to create buffer'); }
+		return buffer;
 	}
 
-	public bindBuffer(name: string) {
-		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, this.buffer[name]);
+	public bindBuffer(buffer: WebGLBuffer) {
+		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, buffer);
 	}
 
 	public setBufferDataStaticDraw(data: TypedArray) {
