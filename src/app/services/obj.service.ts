@@ -3,7 +3,8 @@ import { Injectable } from '@angular/core';
 import { vec2, vec3 } from 'gl-matrix';
 import { from, Observable } from 'rxjs';
 import { filter, last, map, mergeMap, reduce, tap } from 'rxjs/operators';
-import { IModelData, IModelLoader } from './model-loader.service';
+import { IModelData } from '../types/types';
+import { IModelLoader } from './model-loader.service';
 
 interface IIntermediateFace {
 	position: number[];
@@ -90,7 +91,7 @@ export class ObjService implements IModelLoader {
 		) as Observable<IModelData>;
 	}
 
-	private baseIModelData(): IModelData {
+	private baseIModelData() {
 		return {
 			position: [] as vec3[],
 			normal: [] as vec3[],

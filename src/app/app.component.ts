@@ -71,7 +71,7 @@ export class AppComponent implements OnInit {
 		const roundTime = 6000;
 		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
 			tap(m => {
-				const modelID = modelRenderer.createModel(m.vertices);
+				const modelID = modelRenderer.createModel(m);
 
 				const modelMatrix = mat4.create();
 				// left-facing to front-facing

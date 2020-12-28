@@ -1,8 +1,8 @@
 import { concatenate } from '../helper/glMatrixHelper';
-import { ModelData } from '../types/types';
+import { IModelData } from '../types/types';
 
 /**
- * manages the vertex data that gets stored in the buffer
+ * manages the vertex data that gets stored in the buffer(s)
  */
 export class VertexDataArray {
 	private vertexDataChanged = false;
@@ -22,9 +22,9 @@ export class VertexDataArray {
 		return retVal;
 	}
 
-	public addVertexData(modelData: ModelData, instanceIndex: number) {
-		this.numVertices += modelData.length;
-		const layoutedVertexData = modelData.map(vd => concatenate(Float32Array, vd.position, vd.normal, Float32Array.from([instanceIndex])));
+	public addVertexData(md: IModelData, instanceIndex: number) {
+		this.numVertices += md.position.length;
+		const layoutedVertexData = md.position.map((p, i) => concatenate(Float32Array, p, md.normal[i], Float32Array.from([instanceIndex])));
 		this.vertexData = concatenate(Float32Array, layoutedVertexData, this.vertexData);
 		this.vertexDataChanged = true;
 	}

@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { ModelID, InstanceID, ModelData, SIZE_FLOAT } from '../types/types';
+import { ModelID, InstanceID, SIZE_FLOAT, IModelData } from '../types/types';
 import { GlModule } from './GlModule';
 import { ProgramName } from '../types/GlCore';
 import { concatenate } from '../helper/glMatrixHelper';
@@ -20,7 +20,7 @@ const VERTEXDATALENGTH = SIZE_FLOAT * concatenate(Float32Array, vec3.create(), v
 class GlModelRendererModule extends GlModule {
 	private modelRendererProgram: ProgramName = 'mainProgram';
 	private modelRendererBuffer!: WebGLBuffer;
-	private models: ModelData[] = [];
+	private models: IModelData[] = [];
 	private instances: ModelID[] = [];
 	private instanceMatrices = new InstanceMatrixArray(100);
 	private vertexData: VertexDataArray = new VertexDataArray();
@@ -36,7 +36,7 @@ class GlModelRendererModule extends GlModule {
 		this.modelRendererProgram = renderingProgram;
 	}
 
-	public createModel(modelData: ModelData): ModelID {
+	public createModel(modelData: IModelData): ModelID {
 		return this.models.push(modelData) - 1;
 	}
 
