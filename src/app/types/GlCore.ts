@@ -40,6 +40,7 @@ export class GlCore {
 	}
 
 	public nextFrame() {
+		this.setResolutionToDisplayResolution();
 		if (this.clearColor) { this.clearViewport(this.clearColor); }
 		this.modules.forEach(module => module.nextFrame());
 	}

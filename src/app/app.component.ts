@@ -6,8 +6,8 @@ import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
 import { CameraModule } from './GlModules/CameraModule';
 import { LightingModule } from './GlModules/LightingModule';
-import { rotate } from './helper/glMatrixHelper';
 import { GlCore } from './types/GlCore';
+import { CharacterPosition } from './HelperClasses/CharacterPosition';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -70,6 +70,11 @@ export class AppComponent implements OnInit {
 		core.registerModule(cameraModule);
 		core.registerModule(modelRenderer);
 
+		const char = new CharacterPosition(this.canvas);
+		char.setPosition(vec3.fromValues(0, 150, 400));
+		char.setDirection(vec3.fromValues(0, -150, -400));
+		char.setup();
+
 		const refreshFrequency = 40;
 		const roundTime = 6000;
 		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
@@ -101,15 +106,9 @@ export class AppComponent implements OnInit {
 			tap((i: number) => {
 				const percent = ((refreshFrequency * (i + 1)) / roundTime) % 1;
 
-				const eye = vec3.fromValues(0, 150, 400);
-				// change height
-				// vec3.add(eye, eye, [0, Math.sin(percent * 3.141592 * 4) * eye[1] * 0.4, 0]);
-				// rotate around center
-				rotate(eye, eye, vec3.fromValues(0, 1, 0), 3.141592 * 2 * percent);
-				cameraModule.setPosition(eye);
-				cameraModule.setDirection(vec3.scale(vec3.create(), eye, -1));
+				cameraModule.setPosition(char.getPosition());
+				cameraModule.setDirection(char.getDirection());
 
-				core.setResolutionToDisplayResolution();
 				core.nextFrame();
 			})
 		).subscribe();
