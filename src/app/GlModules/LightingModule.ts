@@ -3,28 +3,61 @@ import { concatenate } from '../helper/glMatrixHelper';
 import { ProgramName } from '../types/GlCore';
 import { GlModule } from './GlModule';
 
+declare const lightIDTag: unique symbol;
+type LightID = number & { [lightIDTag]: true };
+export interface ILight { direction: vec3; color: vec3; }
+export interface ILightAlt { from: vec3; to: vec3; color: vec3; }
+
+const MAX_LIGHTS = 4;
+
 export class LightingModule extends GlModule {
 
 	private lightingProgram: ProgramName = 'mainProgram';
 
-	private ambiantLight!: vec3;
-	private lightSources!: { direction: vec3; light: vec3 }[];
+	private ambiantLight: vec3 = vec3.fromValues(0, 0, 0);
+	private directedLightSources: ILight[] = [];
 
-	private lightSourcesAsUniform() {
-		return this.lightSources.reduce((acc, val) => concatenate(Float32Array, acc, val.direction, val.light), new Float32Array());
-	}
-
-	public setup() {
-		this.ambiantLight = vec3.fromValues(0.2, 0.2, 0.6);
-		this.lightSources = new Array(4).fill(null).map(() => ({ direction: vec3.fromValues(0, 0, 0), light: vec3.fromValues(0.0, 0.0, 0.0) }));
-		this.lightSources[0] = { direction: vec3.fromValues(0.0, -1.0, -0.3), light: vec3.fromValues(0.3, 0.3, 0.3) };
-		this.lightSources[1] = { direction: vec3.fromValues(0.0, -0.7, 0.7), light: vec3.fromValues(0.9, 0.1, 0.0) };
-		this.lightSources[2] = { direction: vec3.fromValues(0.3, -0.7, -0.8), light: vec3.fromValues(0.0, 0.1, 0.8) };
-	}
+	public setup() { }
 
 	public nextFrame() {
 		this.core.setUniform(this.lightingProgram, 'u_ambient_light', 3, this.ambiantLight);
-		this.core.setUniform(this.lightingProgram, 'u_diffuse_light', 3, this.lightSourcesAsUniform());
+		this.core.setUniform(
+			this.lightingProgram,
+			'u_directed_light_direction',
+			3,
+			concatenate(Float32Array, ...this.directedLightSources.map(s => s.direction))
+		);
+		this.core.setUniform(
+			this.lightingProgram,
+			'u_directed_light_color',
+			3,
+			concatenate(Float32Array, ...this.directedLightSources.map(s => s.color))
+		);
+	}
+
+	public setAmbientLight(color: vec3) {
+		this.ambiantLight = color;
+	}
+
+	public createDirectedLightSource(light: ILight | ILightAlt) {
+		if (this.directedLightSources.length >= MAX_LIGHTS) { throw new Error('max lights reached'); }
+		if ('from' in light) {
+			light = { color: light.color, direction: vec3.sub(vec3.create(), light.to, light.from) };
+		}
+		return this.directedLightSources.push(light) as LightID;
+	}
+
+	public deleteDirectedLightSource(id: LightID) {
+		this.directedLightSources.splice(id);
+	}
+
+	public updateDirectedLightSource(id: LightID, light: ILight | ILightAlt) {
+		if (this.directedLightSources.length >= MAX_LIGHTS) { throw new Error('max lights reached'); }
+		if ('from' in light) {
+			light = { color: light.color, direction: vec3.sub(vec3.create(), light.to, light.from) };
+		}
+		this.directedLightSources[id] = light;
+		return id;
 	}
 
 }

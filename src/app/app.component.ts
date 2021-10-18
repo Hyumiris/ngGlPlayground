@@ -70,10 +70,20 @@ export class AppComponent implements OnInit {
 		core.registerModule(cameraModule);
 		core.registerModule(modelRenderer);
 
+		lightingModule.setAmbientLight(vec3.fromValues(0.4, 0.4, 0.4));
+		lightingModule.createDirectedLightSource({
+			from: vec3.fromValues(0.4, 1.0, 0.0),
+			to: vec3.create(),
+			color: vec3.fromValues(0.5, 0.0, 0.5)
+		});
+
 		const char = new CharacterPosition(this.canvas);
 		char.setPosition(vec3.fromValues(0, 150, 400));
 		char.setDirection(vec3.fromValues(0, -150, -400));
 		char.setup();
+
+		const charLightColor = vec3.fromValues(0.5, 0.5, 0.5);
+		const charLight = lightingModule.createDirectedLightSource({ direction: char.getDirection(), color: charLightColor });
 
 		const refreshFrequency = 40;
 		const roundTime = 6000;
@@ -108,6 +118,7 @@ export class AppComponent implements OnInit {
 
 				cameraModule.setPosition(char.getPosition());
 				cameraModule.setDirection(char.getDirection());
+				lightingModule.updateDirectedLightSource(charLight, { direction: char.getDirection(), color: charLightColor });
 
 				core.nextFrame();
 			})
