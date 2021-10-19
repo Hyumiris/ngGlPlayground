@@ -9,6 +9,7 @@ import { LightingModule } from './GlModules/LightingModule';
 import { GlCore } from './types/GlCore';
 import { CharacterPosition } from './HelperClasses/CharacterPosition';
 import { ObjService } from './services/obj.service';
+import { createCuboid } from './helper/glMatrixHelper';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -80,7 +81,7 @@ export class AppComponent implements OnInit {
 		char.setDirection(vec3.fromValues(0, -150, -400));
 		char.setup();
 
-		const charLightColor = vec3.fromValues(0.5, 0.5, 0.5);
+		const charLightColor = vec3.fromValues(0.4, 0.4, 0.4);
 		const charLight = lightingModule.createDirectedLightSource({ direction: char.getDirection(), color: charLightColor });
 
 		const refreshFrequency = 40;
@@ -93,6 +94,17 @@ export class AppComponent implements OnInit {
 				core.registerModule(lightingModule);
 				core.registerModule(cameraModule);
 				core.registerModule(modelRenderer);
+			}),
+			tap(() => {
+				const box = createCuboid(-400, 400, -400, 400, -400, 400);
+				const boxID = modelRenderer.createModel({
+					position: box,
+					normal: box.map(() => vec3.fromValues(Math.random(), Math.random(), Math.random())),
+					X: { min: -400, max: 400 },
+					Y: { min: -400, max: 400 },
+					Z: { min: -400, max: 400 },
+				});
+				modelRenderer.createInstance(boxID);
 			}),
 			// mergeMap(() => this.obj.loadModel('/assets/models/eyeball/eyeball.obj')),
 			mergeMap(() => this.stl.loadModel('/assets/models/Rook_Dratini.stl')),

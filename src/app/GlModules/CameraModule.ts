@@ -17,7 +17,7 @@ export class CameraModule extends GlModule {
 
 	private fovy = 45 * (3.141592 / 180);
 	private nearPlane = 0.1;
-	private farPlane = 800;
+	private farPlane = 5000;
 
 	public setPosition(position: vec3) {
 		this.position = position;
