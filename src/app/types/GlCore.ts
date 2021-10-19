@@ -1,8 +1,7 @@
 import { vec3 } from 'gl-matrix';
+import { forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { GlModule } from '../GlModules/GlModule';
-import { VertexDataArray } from '../HelperClasses/VertexDataArray';
-import { MODEL_RENDERER_FRAGMENT_SHADER } from '../shaders/modelRenderer.frag';
-import { MODEL_RENDERER_VERTEX_SHADER } from '../shaders/modelRenderer.vert';
 import { TypedArray } from './types';
 
 export type ShaderName = string | number;
@@ -28,10 +27,15 @@ export class GlCore {
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
+	}
 
-		this.createShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, MODEL_RENDERER_VERTEX_SHADER);
-		this.createShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, MODEL_RENDERER_FRAGMENT_SHADER);
-		this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader');
+	public init() {
+		return forkJoin([
+			this.loadShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, 'assets/shaders/modelRenderer.vert'),
+			this.loadShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, 'assets/shaders/modelRenderer.frag')
+		]).pipe(
+			map(() => this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader'))
+		);
 	}
 
 	public registerModule(module: GlModule) {
@@ -78,6 +82,26 @@ export class GlCore {
 		}
 
 		this.shaders[name] = newShader;
+	}
+
+	public loadShader(name: ShaderName, shaderType: number, path: string) {
+		return new Observable<string>(observer => {
+			const xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = () => {
+				if (xhr.readyState !== 4) { return; }
+				if (xhr.status >= 200 && xhr.status < 300) {
+					xhr.onreadystatechange = null;
+					observer.next(xhr.responseText);
+					observer.complete();
+				} else {
+					observer.error(xhr);
+				}
+			};
+			xhr.open('GET', path);
+			xhr.send();
+		}).pipe(
+			map(code => this.createShader(name, shaderType, code))
+		);
 	}
 
 	public createProgram(name: ProgramName, vertShader: ShaderName, fragShader: ShaderName) {

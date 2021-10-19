@@ -1,5 +1,3 @@
-export const MODEL_RENDERER_FRAGMENT_SHADER =
-`
 precision highp float;
 
 #define MAX_LIGHTS 4
@@ -22,5 +20,3 @@ void main() {
 
 	gl_FragColor = vec4(ambient_color + diffuse_color, 1.0);
 }
-
-`;

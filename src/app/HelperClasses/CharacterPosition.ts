@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { fromEvent, interval } from 'rxjs';
-import { filter, map, mergeMap, pluck, scan, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { filter, map, mergeMap, pluck, takeUntil, tap } from 'rxjs/operators';
 import { rotate } from '../helper/glMatrixHelper';
 
 

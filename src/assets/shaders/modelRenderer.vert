@@ -1,5 +1,3 @@
-export const MODEL_RENDERER_VERTEX_SHADER =
-`
 attribute vec3 position;
 attribute vec3 normal;
 attribute float instanceIndex;
@@ -19,4 +17,3 @@ void main() {
 	v_normal = transformed_normal.xyz;
 	gl_Position = projection * view * modelMatrices[int(instanceIndex)] * vec4(position, 1.0);
 }
-`;

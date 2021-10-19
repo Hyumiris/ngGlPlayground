@@ -1,13 +1,14 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { interval } from 'rxjs';
-import { tap, startWith, flatMap, filter } from 'rxjs/operators';
+import { tap, startWith, flatMap, filter, delay, mergeMap } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
 import { CameraModule } from './GlModules/CameraModule';
 import { LightingModule } from './GlModules/LightingModule';
 import { GlCore } from './types/GlCore';
 import { CharacterPosition } from './HelperClasses/CharacterPosition';
+import { ObjService } from './services/obj.service';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -41,7 +42,8 @@ export class AppComponent implements OnInit {
 	private renderingActive = true;
 
 	constructor(
-		private stl: StlService
+		private stl: StlService,
+		private obj: ObjService
 	) { (window as any).appComponent = this; }
 
 	public ngOnInit() {
@@ -62,13 +64,9 @@ export class AppComponent implements OnInit {
 
 	private setupGl() {
 		const core = new GlCore(this.gl);
-		core.setClearColor(vec3.fromValues(0.3, 0.3, .4));
 		const modelRenderer = new ModelRenderer();
 		const cameraModule = new CameraModule();
 		const lightingModule = new LightingModule();
-		core.registerModule(lightingModule);
-		core.registerModule(cameraModule);
-		core.registerModule(modelRenderer);
 
 		lightingModule.setAmbientLight(vec3.fromValues(0.4, 0.4, 0.4));
 		lightingModule.createDirectedLightSource({
@@ -87,7 +85,17 @@ export class AppComponent implements OnInit {
 
 		const refreshFrequency = 40;
 		const roundTime = 6000;
-		this.stl.loadModel('/assets/models/Rook_Dratini.stl').pipe(
+
+
+		core.init().pipe(
+			tap(() => {
+				core.setClearColor(vec3.fromValues(0.3, 0.3, 0.4));
+				core.registerModule(lightingModule);
+				core.registerModule(cameraModule);
+				core.registerModule(modelRenderer);
+			}),
+			// mergeMap(() => this.obj.loadModel('/assets/models/eyeball/eyeball.obj')),
+			mergeMap(() => this.stl.loadModel('/assets/models/Rook_Dratini.stl')),
 			tap(m => {
 				const modelID = modelRenderer.createModel(m);
 

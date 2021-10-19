@@ -1,6 +1,3 @@
-
-export const VOID_VERTEX_SHADER =
-`
 attribute vec3 position;
 attribute vec3 normal;
 
@@ -12,4 +9,3 @@ void main() {
 	v_color = normal;
 	gl_Position = view_projection * vec4(position, 1.0);
 }
-`;
