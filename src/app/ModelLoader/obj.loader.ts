@@ -83,6 +83,7 @@ const lineHandler: { [type in LineType]: (acc: IAccumulatingObj, parts: string[]
 	usemtl: (acc: IAccumulatingObj, parts: [string]) => acc.usemtl = parts[0]
 };
 
+/** takes a face and returns an array of triangular faces which are together equivalent to the original face */
 const asTriangleFaces: ((f: IFace) => IFace[])[] = [
 	() => { throw new Error('not enough vertices'); },
 	() => { throw new Error('not enough vertices'); },
