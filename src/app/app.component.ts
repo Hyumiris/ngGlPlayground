@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { interval } from 'rxjs';
-import { tap, startWith, flatMap, filter, delay, mergeMap } from 'rxjs/operators';
+import { tap, startWith, flatMap, filter, mergeMap } from 'rxjs/operators';
 import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
 import { CameraModule } from './GlModules/CameraModule';
@@ -10,6 +10,7 @@ import { GlCore } from './types/GlCore';
 import { CharacterPosition } from './HelperClasses/CharacterPosition';
 import { ObjService } from './services/obj.service';
 import { createCuboid } from './helper/glMatrixHelper';
+import { loadObjModel } from './ModelLoader/obj.loader';
 
 //
 // ts: [name: (number | string)]: any is not accepted even though number or string is allowed
@@ -106,8 +107,8 @@ export class AppComponent implements OnInit {
 				});
 				modelRenderer.createInstance(boxID);
 			}),
-			// mergeMap(() => this.obj.loadModel('/assets/models/eyeball/eyeball.obj')),
-			mergeMap(() => this.stl.loadModel('/assets/models/Rook_Dratini.stl')),
+			mergeMap(() => loadObjModel('/assets/models/eyeball/eyeball.obj')),
+			// mergeMap(() => this.stl.loadModel('/assets/models/Rook_Dratini.stl')),
 			tap(m => {
 				const modelID = modelRenderer.createModel(m);
 
