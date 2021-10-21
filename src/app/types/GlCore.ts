@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { GlModule } from '../GlModules/GlModule';
+import { loadTextFile } from '../helper/fileLoader';
 import { TypedArray } from './types';
 
 export type ShaderName = string | number;
@@ -85,23 +86,7 @@ export class GlCore {
 	}
 
 	public loadShader(name: ShaderName, shaderType: number, path: string) {
-		return new Observable<string>(observer => {
-			const xhr = new XMLHttpRequest();
-			xhr.onreadystatechange = () => {
-				if (xhr.readyState !== 4) { return; }
-				if (xhr.status >= 200 && xhr.status < 300) {
-					xhr.onreadystatechange = null;
-					observer.next(xhr.responseText);
-					observer.complete();
-				} else {
-					observer.error(xhr);
-				}
-			};
-			xhr.open('GET', path);
-			xhr.send();
-		}).pipe(
-			map(code => this.createShader(name, shaderType, code))
-		);
+		return loadTextFile(path).pipe(map(code => this.createShader(name, shaderType, code)));
 	}
 
 	public createProgram(name: ProgramName, vertShader: ShaderName, fragShader: ShaderName) {
