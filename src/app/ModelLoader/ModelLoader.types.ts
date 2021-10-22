@@ -8,3 +8,16 @@ export interface IModelData {
 	Y: { min: number, max: number };
 	Z: { min: number, max: number };
 }
+
+export interface IMaterial {
+	ambient: vec3;
+	diffuse: vec3;
+	specular: vec3;
+	specular_exp: number;
+	color_map?: string;
+	bump_map?: string;
+}
+
+export interface IMaterialGroup {
+	[name: string]: IMaterial;
+}
