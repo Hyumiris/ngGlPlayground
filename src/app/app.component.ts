@@ -2,13 +2,11 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { interval } from 'rxjs';
 import { tap, startWith, flatMap, filter, mergeMap } from 'rxjs/operators';
-import { StlService } from './services/stl.service';
 import { ModelRenderer } from './GlModules/ModelRenderer';
 import { CameraModule } from './GlModules/CameraModule';
 import { LightingModule } from './GlModules/LightingModule';
 import { GlCore } from './types/GlCore';
 import { CharacterPosition } from './HelperClasses/CharacterPosition';
-import { ObjService } from './services/obj.service';
 import { createCuboid } from './helper/glMatrixHelper';
 import { loadObjModel } from './ModelLoader/obj.loader';
 
@@ -43,10 +41,7 @@ export class AppComponent implements OnInit {
 
 	private renderingActive = true;
 
-	constructor(
-		private stl: StlService,
-		private obj: ObjService
-	) { (window as any).appComponent = this; }
+	constructor() { (window as any).appComponent = this; }
 
 	public ngOnInit() {
 		if (!this.canvasRef) { throw new Error('canvasRef not accessible'); }
