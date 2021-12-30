@@ -1,12 +1,12 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { GlModule } from './GlModule';
+import { WebGlFacade } from './WebGlFacade';
 
 // TODO: figure out whether direction or center is more comfy
 
 /**
  * manages the 'viewProjection' uniform
  */
-export class CameraModule extends GlModule {
+export class CameraManager {
 
 	private projection: mat4 = mat4.create();
 	private view: mat4 = mat4.create();
@@ -17,7 +17,9 @@ export class CameraModule extends GlModule {
 
 	private fovy = 45 * (3.141592 / 180);
 	private nearPlane = 0.1;
-	private farPlane = 5000;
+	private farPlane = 1000;
+
+	constructor(private canvas: HTMLCanvasElement) {}
 
 	public setPosition(position: vec3) {
 		this.position = position;
@@ -36,12 +38,12 @@ export class CameraModule extends GlModule {
 		mat4.lookAt(this.view, this.position, this.center, this.up);
 
 		this.projection = mat4.create();
-		mat4.perspective(this.projection, this.fovy, this.core.getCanvasWidth() / this.core.getCanvasHeight(), this.nearPlane, this.farPlane);
+		mat4.perspective(this.projection, this.fovy, this.canvas.width / this.canvas.height, this.nearPlane, this.farPlane);
 	}
 
-	public nextFrame() {
+	public nextFrame(gl: WebGlFacade, program: WebGLProgram) {
 		this.generateViewProjection();
-		this.core.setUniformMatrix('mainProgram', 'view', 4, this.view);
-		this.core.setUniformMatrix('mainProgram', 'projection', 4, this.projection);
+		gl.setUniformMatrix(program, 'view', 4, Float32Array.from(this.view));
+		gl.setUniformMatrix(program, 'projection', 4, Float32Array.from(this.projection));
 	}
 }

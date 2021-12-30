@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix';
 
-/** manages an array of instance matrices */
+/** manages an fixed length array of instance matrices */
 export class InstanceMatrixArray {
 	/** the array containng the matrices */
 	private data = new Array<mat4>(this.maxInstances).fill(mat4.create());

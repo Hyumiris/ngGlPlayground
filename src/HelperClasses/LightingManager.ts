@@ -1,7 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { concatenate } from '../helper/glMatrixHelper';
-import { ProgramName } from '../types/GlCore';
-import { GlModule } from './GlModule';
+import { WebGlFacade } from './WebGlFacade';
 
 declare const lightIDTag: unique symbol;
 type LightID = number & { [lightIDTag]: true };
@@ -10,28 +9,26 @@ export interface ILightAlt { from: vec3; to: vec3; color: vec3; }
 
 const MAX_LIGHTS = 4;
 
-export class LightingModule extends GlModule {
-
-	private lightingProgram: ProgramName = 'mainProgram';
+export class LightingManager {
 
 	private ambiantLight: vec3 = vec3.fromValues(0, 0, 0);
 	private directedLightSources: ILight[] = [];
 
 	public setup() { }
 
-	public nextFrame() {
-		this.core.setUniform(this.lightingProgram, 'u_ambient_light', 3, this.ambiantLight);
-		this.core.setUniform(
-			this.lightingProgram,
+	public nextFrame(gl: WebGlFacade, program: WebGLProgram) {
+		gl.setUniform(program, 'u_ambient_light', 3, Float32Array.from(this.ambiantLight));
+		gl.setUniform(
+			program,
 			'u_directed_light_direction',
 			3,
-			concatenate(Float32Array, ...this.directedLightSources.map(s => s.direction))
+			concatenate(Float32Array, ...this.directedLightSources.map(s => Float32Array.from(s.direction)))
 		);
-		this.core.setUniform(
-			this.lightingProgram,
+		gl.setUniform(
+			program,
 			'u_directed_light_color',
 			3,
-			concatenate(Float32Array, ...this.directedLightSources.map(s => s.color))
+			concatenate(Float32Array, ...this.directedLightSources.map(s => Float32Array.from(s.color)))
 		);
 	}
 

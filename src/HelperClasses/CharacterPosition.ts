@@ -1,6 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { fromEvent, interval } from 'rxjs';
-import { filter, map, mergeMap, pluck, takeUntil, tap } from 'rxjs/operators';
+import { fromEvent, interval, filter, map, mergeMap, pluck, takeUntil, tap } from 'rxjs';
 import { rotate } from '../helper/glMatrixHelper';
 
 
@@ -18,25 +17,25 @@ export class CharacterPosition {
 	private position = vec3.create();
 	/** always normalized */
 	private direction = vec3.fromValues(-1, 0, 0);
-	private speed = 3;
+	private speed = 1;
 
 	constructor(private canvas: HTMLCanvasElement) { }
 
 	public setup() {
 		const availableKeys = ['w', 'a', 's', 'd'];
-		fromEvent(document, 'keydown').pipe(
-			pluck<Event, string>('key'),
+		fromEvent<KeyboardEvent>(document, 'keydown').pipe(
+			pluck('key'),
 			filter(key => availableKeys.includes(key)),
 			tap(key => availableKeys.splice(availableKeys.indexOf(key), 1)),
 			mergeMap(key => interval(50).pipe(
-				takeUntil(fromEvent(document, 'keyup').pipe(filter((evt: KeyboardEvent) => evt.key === key), tap(() => availableKeys.push(key)))),
+				takeUntil(fromEvent<KeyboardEvent>(document, 'keyup').pipe(filter((evt: KeyboardEvent) => evt.key === key), tap(() => availableKeys.push(key)))),
 				map(() => this.keyDir[key]())
 			)),
 			tap(change => vec3.add(this.position, this.position, change))
 		).subscribe();
 
-		fromEvent(document, 'mousedown').pipe(
-			mergeMap(() => fromEvent(document, 'mousemove').pipe(takeUntil(fromEvent(document, 'mouseup')))),
+		fromEvent<MouseEvent>(document, 'mousedown').pipe(
+			mergeMap(() => fromEvent<MouseEvent>(document, 'mousemove').pipe(takeUntil(fromEvent(document, 'mouseup')))),
 			tap((evt: MouseEvent) => {
 				const xDiff = -evt.movementX / this.canvas.clientWidth * 2;
 				const yDiff = evt.movementY / this.canvas.clientHeight * 2;

@@ -1,5 +1,5 @@
 import { MAT4LENGTH, TypedArray } from '../types/types';
-import { vec4, mat4, vec3 } from 'gl-matrix';
+import { vec4, mat4, vec3, vec2 } from 'gl-matrix';
 
 export function concatenate<T extends TypedArray>(type: (new (length: number) => T), first?: Array<T> | T, ...rest: Array<T>) {
 	if (!first) { return new type(0); }

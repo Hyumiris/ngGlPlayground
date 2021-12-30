@@ -1,9 +1,20 @@
 import { vec2, vec3 } from 'gl-matrix';
 
-export interface IModelData {
+export interface IModelDataBase {
 	position: vec3[];
 	normal: vec3[];
 	texCoords: vec2[];
+}
+
+export interface IModelData2 extends IModelDataBase {
+	X: { min: number, max: number };
+	Y: { min: number, max: number };
+	Z: { min: number, max: number };
+}
+
+export interface ModelData {
+	data: Map<string, IModelDataBase>;
+	materials: Map<string, IMaterial>;
 	X: { min: number, max: number };
 	Y: { min: number, max: number };
 	Z: { min: number, max: number };
@@ -34,6 +45,7 @@ export interface IMaterial {
 	specular: vec3;
 	/** 0 - 1000 */
 	specular_exp: number;
+	opacity: number;
 	color_map?: string;
 	bump_map?: string;
 }

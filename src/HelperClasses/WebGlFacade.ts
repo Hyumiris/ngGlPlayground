@@ -1,61 +1,22 @@
 import { vec3 } from 'gl-matrix';
-import { forkJoin, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { GlModule } from '../GlModules/GlModule';
+import { map } from 'rxjs';
 import { loadTextFile } from '../helper/fileLoader';
-import { TypedArray } from './types';
+import { TypedArray } from '../types/types';
 
-export type ShaderName = string | number;
-export type ProgramName = string | number;
+export type GLDataType = 'BYTE' | 'SHORT' | 'UNSIGNED_BYTE' | 'UNSIGNED_SHORT' | 'FLOAT';
+export enum GLTextureID {
+	TEXTURE0,
+	TEXTURE1,
+	TEXTURE2,
+	TEXTURE3
+}
 
-/** possible values:\
- * BYTE\
- * SHORT\
- * UNSIGNED_BYTE\
- * UNSIGNED_SHORT\
- * FLOAT
- */
-// tslint:disable-next-line:max-line-length
-export type GLDataType = WebGLRenderingContext['BYTE'] | WebGLRenderingContext['SHORT'] | WebGLRenderingContext['UNSIGNED_BYTE'] | WebGLRenderingContext['UNSIGNED_SHORT'] | WebGLRenderingContext['FLOAT'];
-
-export class GlCore {
+export class WebGlFacade {
 
 	private gl: WebGLRenderingContext;
-	private shaders: { [name: string]: WebGLShader; } = {};
-	private programs: { [name: string]: WebGLProgram } = {};
-	private modules: GlModule[] = [];
-	private clearColor?: vec3;
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
-	}
-
-	public init() {
-		return forkJoin([
-			this.loadShader('mainVertexShader', WebGLRenderingContext.VERTEX_SHADER, 'assets/shaders/modelRenderer.vert'),
-			this.loadShader('mainFragmentShader', WebGLRenderingContext.FRAGMENT_SHADER, 'assets/shaders/modelRenderer.frag')
-		]).pipe(
-			map(() => this.createProgram('mainProgram', 'mainVertexShader', 'mainFragmentShader'))
-		);
-	}
-
-	public registerModule(module: GlModule) {
-		module.setupModule(this);
-		this.modules.push(module);
-	}
-
-	public nextFrame() {
-		this.setResolutionToDisplayResolution();
-		if (this.clearColor) { this.clearViewport(this.clearColor); }
-		this.modules.forEach(module => module.nextFrame());
-	}
-
-	/**
-	 * very powerful requesting mechanism to read directly from another module
-	 * TODO: better, encapsulating-friendly method
-	 */
-	public request(source: typeof GlModule, value: string) {
-		return ((this.modules.find((module) => (module instanceof source))) as unknown as { [v: string]: unknown })[value];
 	}
 
 	public getCanvasWidth() {
@@ -66,8 +27,7 @@ export class GlCore {
 		return this.gl.canvas.height;
 	}
 
-	public createShader(name: ShaderName, shaderType: number, code: string) {
-		if (name in this.shaders) { throw new Error(`shader with name '${name}' does already exist`); }
+	public createShader(shaderType: number, code: string) {
 		if (shaderType !== this.gl.VERTEX_SHADER && shaderType !== this.gl.FRAGMENT_SHADER) {
 			throw new Error(
 				`shaderType ${shaderType} is neither a vertexShader (${this.gl.VERTEX_SHADER}) or a fragmentShader (${this.gl.FRAGMENT_SHADER})`);
@@ -82,22 +42,18 @@ export class GlCore {
 			throw new Error('Could not compile WebGL program:\n\n' + failInfo);
 		}
 
-		this.shaders[name] = newShader;
+		return newShader;
 	}
 
-	public loadShader(name: ShaderName, shaderType: number, path: string) {
-		return loadTextFile(path).pipe(map(code => this.createShader(name, shaderType, code)));
+	public loadShader(shaderType: number, path: string) {
+		return loadTextFile(path).pipe(map(code => this.createShader(shaderType, code)));
 	}
 
-	public createProgram(name: ProgramName, vertShader: ShaderName, fragShader: ShaderName) {
-		if (name in this.programs) { throw new Error(`program with name '${name}' does already exist`); }
-		if (!(vertShader in this.shaders)) { throw new Error(`shader with name '${vertShader}' doesn't exist`); }
-		if (!(fragShader in this.shaders)) { throw new Error(`shader with name '${fragShader}' doesn't exist`); }
-
+	public createProgram(vertShader: WebGLShader, fragShader: WebGLShader) {
 		const program = this.gl.createProgram();
 		if (!program) { throw new Error('failed to create the program'); }
-		this.gl.attachShader(program, this.shaders[vertShader]);
-		this.gl.attachShader(program, this.shaders[fragShader]);
+		this.gl.attachShader(program, vertShader);
+		this.gl.attachShader(program, fragShader);
 		this.gl.linkProgram(program);
 
 		if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
@@ -105,7 +61,7 @@ export class GlCore {
 			throw new Error('Could not compile WebGL program:\n\n' + failInfo);
 		}
 
-		this.programs[name] = program;
+		return program;
 	}
 
 	/**
@@ -117,11 +73,30 @@ export class GlCore {
 	}
 
 	/**
+	 * unsets the passed flags for the rendering context
+	 * @param flags flags that should be enabled
+	 */
+	public disable(flags: number) {
+		this.gl.disable(flags);
+	}
+
+	public enableAlphaBlending() {
+		this.gl.depthMask(false);
+		this.gl.enable(this.gl.BLEND)
+		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+	}
+
+	public disableAlphaBlending() {
+		this.gl.depthMask(true);
+		this.gl.disable(this.gl.BLEND)
+	}
+
+	/**
 	 * chooses the program used for draw calls
 	 * @param name name of the program or null to deselect all programs
 	 */
-	public useProgram(name: ProgramName | null) {
-		this.gl.useProgram((name !== null) ? this.programs[name] : name);
+	public useProgram(program: WebGLProgram | null) {
+		this.gl.useProgram(program);
 	}
 
 	/**
@@ -135,10 +110,10 @@ export class GlCore {
 	 * @param offset offset in bytes from the start of the vertex data block
 	 */
 	// tslint:disable-next-line:max-line-length
-	public setVertexAttribPointer(program: ProgramName, attributeName: string, size: number, type: GLDataType, normalized: boolean, stride: number, offset: number) {
-		const aLocation = this.gl.getAttribLocation(this.programs[program], attributeName);
+	public setVertexAttribPointer(program: WebGLProgram, attributeName: string, size: number, type: GLDataType, normalized: boolean, stride: number, offset: number) {
+		const aLocation = this.gl.getAttribLocation(program, attributeName);
 		this.gl.enableVertexAttribArray(aLocation);
-		this.gl.vertexAttribPointer(aLocation, size, type, normalized, stride, offset);
+		this.gl.vertexAttribPointer(aLocation, size, WebGLRenderingContext[type], normalized, stride, offset);
 	}
 
 	/**
@@ -147,10 +122,9 @@ export class GlCore {
 	 * @param num number of components that each value consists of
 	 * @param value the actual value(s) to be assigned to the uniform
 	 */
-	public setUniform(program: ProgramName, uniform: string, num: 1 | 2 | 3 | 4, value: Float32Array | Int32Array | number, ..._: number[]) {
-		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
+	public setUniform(program: WebGLProgram, uniform: string, num: 1 | 2 | 3 | 4, value: Float32Array | Int32Array | number, ..._: number[]) {
 		this.useProgram(program);
-		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
+		const uniformLocation = this.gl.getUniformLocation(program, uniform);
 		if (value instanceof Float32Array) {
 			// this.gl[`uniform${num}fv`](uniformLocation, value);
 			switch (num) {
@@ -172,9 +146,9 @@ export class GlCore {
 			const numbers: number[] = Array.prototype.slice.call(arguments, 3, 3 + num);
 			switch (num) {
 				case 1: this.gl.uniform1f(uniformLocation, numbers[0]); break;
-				case 1: this.gl.uniform2f(uniformLocation, numbers[0], numbers[1]); break;
-				case 1: this.gl.uniform3f(uniformLocation, numbers[0], numbers[1], numbers[2]); break;
-				case 1: this.gl.uniform4f(uniformLocation, numbers[0], numbers[1], numbers[2], numbers[3]); break;
+				case 2: this.gl.uniform2f(uniformLocation, numbers[0], numbers[1]); break;
+				case 3: this.gl.uniform3f(uniformLocation, numbers[0], numbers[1], numbers[2]); break;
+				case 4: this.gl.uniform4f(uniformLocation, numbers[0], numbers[1], numbers[2], numbers[3]); break;
 			}
 		}
 	}
@@ -185,10 +159,9 @@ export class GlCore {
 	 * @param num num x num is the size of the unifom matrix
 	 * @param values the actual values to be assigned to the uniform
 	 */
-	public setUniformMatrix(program: ProgramName, uniform: string, num: 2 | 3 | 4, values: Float32Array) {
-		if (!this.programs[program]) { throw new Error(`Program ${program} does not exist`); }
+	public setUniformMatrix(program: WebGLProgram, uniform: string, num: 2 | 3 | 4, values: Float32Array) {
 		this.useProgram(program);
-		const uniformLocation = this.gl.getUniformLocation(this.programs[program], uniform);
+		const uniformLocation = this.gl.getUniformLocation(program, uniform);
 
 		// second param must be false according to docs
 		// this.gl[`uniformMatrix${num}fv`](uniformLocation, false, values);
@@ -224,7 +197,7 @@ export class GlCore {
 		return buffer;
 	}
 
-	public bindBuffer(buffer: WebGLBuffer) {
+	public bindBuffer(buffer: WebGLBuffer | null) {
 		this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, buffer);
 	}
 
@@ -232,12 +205,56 @@ export class GlCore {
 		this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, WebGLRenderingContext.STATIC_DRAW);
 	}
 
-	public setClearColor(clearColor?: vec3) {
-		this.clearColor = clearColor;
+	public createTexture() {
+		const texture = this.gl.createTexture();
+		if (!texture) { throw new Error('failed to create texture'); }
+		this.gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+		const defaultData = new Uint8Array([0, 0, 255, 255]);
+		this.gl.texImage2D(
+			WebGLRenderingContext.TEXTURE_2D,
+			0,
+			WebGLRenderingContext.RGBA,
+			1,
+			1,
+			0,
+			WebGLRenderingContext.RGBA,
+			WebGLRenderingContext.UNSIGNED_BYTE,
+			defaultData
+		);
+		return texture;
+	}
+
+	public bindTexture(texture: WebGLTexture) {
+		this.gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+	}
+
+	public setUniformTexture(program: WebGLProgram, uniform: string, texture: WebGLTexture, textureID: GLTextureID) {
+		const textureUnit = GLTextureID[textureID] as keyof typeof GLTextureID;
+		this.gl.useProgram(program);
+		const uniformLocation = this.gl.getUniformLocation(program, uniform);
+		this.gl.activeTexture(WebGLRenderingContext[textureUnit]);
+		this.gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+		this.gl.uniform1i(uniformLocation, textureID);
+	}
+
+	public texImage2D(texture: WebGLTexture, image: HTMLImageElement) {
+		this.gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+		this.gl.texImage2D(
+			WebGLRenderingContext.TEXTURE_2D,
+			0,
+			WebGLRenderingContext.RGBA,
+			WebGLRenderingContext.RGBA,
+			WebGLRenderingContext.UNSIGNED_BYTE,
+			image
+		);
+		
+		this.gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_S, WebGLRenderingContext.CLAMP_TO_EDGE);
+		this.gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_T, WebGLRenderingContext.CLAMP_TO_EDGE);
+		this.gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.LINEAR);
 	}
 
 	/**
-	 * draw call
+	 * draw call for a given range of vertices
 	 * @param mode what kind of primitives
 	 * @param start first index of the vertices
 	 * @param end last index of the vertices
