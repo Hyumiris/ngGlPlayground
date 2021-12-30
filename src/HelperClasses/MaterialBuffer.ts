@@ -39,6 +39,7 @@ export class MaterialBuffer {
 		// TODO: check if this works as intended even though it calls the float version
 		gl.setUniform(program, 'material_specular_exp', 1, this.material.specular_exp);
 		gl.setUniform(program, 'material_alpha', 1, this.material.opacity);
+		gl.setUniform(program, 'material_illum', 1, this.material.illum);
 
 		const { modelMatrices, normalMatrices } = this.instances.getMatrices();
 		gl.setUniformMatrix(program, 'modelMatrices', 4, toFloat32Array(modelMatrices));

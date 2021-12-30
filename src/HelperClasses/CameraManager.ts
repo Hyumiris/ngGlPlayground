@@ -43,6 +43,7 @@ export class CameraManager {
 
 	public nextFrame(gl: WebGlFacade, program: WebGLProgram) {
 		this.generateViewProjection();
+		gl.setUniform(program, 'viewPos', 3, this.position);
 		gl.setUniformMatrix(program, 'view', 4, Float32Array.from(this.view));
 		gl.setUniformMatrix(program, 'projection', 4, Float32Array.from(this.projection));
 	}

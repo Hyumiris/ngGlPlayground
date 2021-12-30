@@ -10,13 +10,13 @@ import { IMaterial } from './ModelLoader.types';
 const lineSplitRe = /([^\s]+)/g;
 
 // some other related stuff: 'Ke', 'Ni', 'd', 'map_Ke', 'refl', 'illum'
-const lineTypes = ['newmtl', 'Ka', 'Kd', 'Ks', 'Ns', 'd', 'map_Kd', 'map_Bump', 'map_Ks'] as const;
+const lineTypes = ['newmtl', 'Ka', 'Kd', 'Ks', 'Ns', 'd', 'map_Kd', 'map_Bump', 'map_Ks', 'illum'] as const;
 type LineType = (typeof lineTypes)[number];
 
 interface IMaterialGroupAccumulator { group: Map<string, IMaterial>; currentMtl: string; path: string; }
 const getMaterialGroupAcc = (path: string): IMaterialGroupAccumulator => ({ group: new Map<string, IMaterial>(), currentMtl: '', path });
 
-const createMaterial = (): IMaterial => ({ ambient: vec3.create(), diffuse: vec3.create(), specular: vec3.create(), specular_exp: 0, opacity: 1 });
+const createMaterial = (): IMaterial => ({ ambient: vec3.create(), diffuse: vec3.create(), specular: vec3.create(), specular_exp: 0, opacity: 1, illum: 2 });
 
 // tslint:disable: no-non-null-assertion
 const lineHandler: { [type in LineType]: (acc: IMaterialGroupAccumulator, parts: string[]) => IMaterialGroupAccumulator } = {
@@ -46,7 +46,8 @@ const lineHandler: { [type in LineType]: (acc: IMaterialGroupAccumulator, parts:
 		acc.group.get(acc.currentMtl)!.color_map = fullPath;
 		return acc;
 	},
-	map_Bump: (acc, [path]) => (acc.group.get(acc.currentMtl)!.bump_map = computeRelativePath(acc.path, path), acc)
+	map_Bump: (acc, [path]) => (acc.group.get(acc.currentMtl)!.bump_map = computeRelativePath(acc.path, path), acc),
+	illum: (acc, [illumID]) => (acc.group.get(acc.currentMtl)!.illum = parseInt(illumID), acc)
 };
 // tslint:enable: no-non-null-assertion
 

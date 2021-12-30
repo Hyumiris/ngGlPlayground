@@ -48,6 +48,11 @@ export interface IMaterial {
 	opacity: number;
 	color_map?: string;
 	bump_map?: string;
+	/**
+	 * Illumination model to be used.  
+	 * Only 0, 1 and 2 are currently supported
+	 */
+	illum: number;
 }
 
 export interface IMaterialGroup {

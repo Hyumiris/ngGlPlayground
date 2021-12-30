@@ -5,6 +5,7 @@ import { ModelManager } from './HelperClasses/ModelManager';
 import { WebGlFacade } from './HelperClasses/WebGlFacade';
 import { CameraManager } from './HelperClasses/CameraManager';
 import { LightingManager } from './HelperClasses/LightingManager';
+import { IMaterial } from './ModelLoader/ModelLoader.types';
 
 const canvas = document.createElement('canvas');
 document.body.appendChild(canvas);
@@ -18,11 +19,11 @@ const lightingManager = new LightingManager();
 gl.enable(WebGLRenderingContext.DEPTH_TEST);
 const buffer = gl.createBuffer();
 
-lightingManager.setAmbientLight(vec3.fromValues(0.6, 0.6, 0.6));
+lightingManager.setAmbientLight(vec3.fromValues(0.3, 0.3, 0.3));
 lightingManager.createDirectedLightSource({
-	from: vec3.fromValues(0.0, 1.0, 0.0),
+	from: vec3.fromValues(0.0, 1.0, 0.7),
 	to: vec3.create(),
-	color: vec3.fromValues(0.2, 0.2, 0.3)
+	color: vec3.fromValues(0.3, 0.3, 0.6)
 });
 
 const char = new CharacterPosition(canvas);
@@ -43,6 +44,9 @@ forkJoin([
 	tap(([_, modelID]) => {
 		// const modelID = modelRenderer.createModel(m);
 		const m = modelManager.getModel(modelID);
+		const mat = m.materials.get('Eye_Tranz.001') as IMaterial;
+		mat.ambient = vec3.fromValues(0.0, 0.0, 0.0);
+		mat.diffuse = vec3.fromValues(0.0, 0.0, 0.0);
 
 		const modelMatrix = mat4.create();
 		// left-facing to front-facing
