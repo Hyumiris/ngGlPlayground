@@ -237,7 +237,7 @@ export class WebGlFacade {
 		this.gl.uniform1i(uniformLocation, textureID);
 	}
 
-	public texImage2D(texture: WebGLTexture, image: HTMLImageElement) {
+	public texImage2D(texture: WebGLTexture, image: TexImageSource) {
 		this.gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
 		this.gl.texImage2D(
 			WebGLRenderingContext.TEXTURE_2D,

@@ -5,7 +5,22 @@ import { ModelManager } from './HelperClasses/ModelManager';
 import { WebGlFacade } from './HelperClasses/WebGlFacade';
 import { CameraManager } from './HelperClasses/CameraManager';
 import { LightingManager } from './HelperClasses/LightingManager';
-import { IMaterial } from './ModelLoader/ModelLoader.types';
+
+
+const fpsSpan = document.createElement('span');
+document.body.appendChild(fpsSpan);
+fpsSpan.style.position = 'fixed';
+fpsSpan.style.top = '0';
+fpsSpan.style.right = '0';
+fpsSpan.style.color = 'white';
+fpsSpan.style.textAnchor = 'end';
+let renderCounter = 0;
+let fps = 0;
+interval(500).subscribe(() => {
+	fps = (fps + renderCounter) * (2 / 3);
+	fpsSpan.innerText = `FPS: ${fps.toFixed(2)}`;
+	renderCounter = 0;
+});
 
 const canvas = document.createElement('canvas');
 document.body.appendChild(canvas);
@@ -19,11 +34,10 @@ const lightingManager = new LightingManager();
 gl.enable(WebGLRenderingContext.DEPTH_TEST);
 const buffer = gl.createBuffer();
 
-lightingManager.setAmbientLight(vec3.fromValues(0.3, 0.3, 0.3));
+lightingManager.setAmbientLight(vec3.fromValues(0.5, 0.5, 0.5));
 lightingManager.createDirectedLightSource({
-	from: vec3.fromValues(0.0, 1.0, 0.7),
-	to: vec3.create(),
-	color: vec3.fromValues(0.3, 0.3, 0.6)
+	direction: vec3.fromValues(0, -50, -80),
+	color: vec3.fromValues(0.4, 0.4, 0.5)
 });
 
 const char = new CharacterPosition(canvas);
@@ -31,7 +45,7 @@ char.setPosition(vec3.fromValues(0, 50, 80));
 char.setDirection(vec3.fromValues(0, -50, -80));
 char.setup();
 
-const refreshFrequency = 40;
+const refreshFrequency = 60;
 const roundTime = 6000;
 
 forkJoin([
@@ -39,38 +53,25 @@ forkJoin([
 		gl.loadShader(WebGLRenderingContext.VERTEX_SHADER, 'assets/shaders/main.vert'),
 		gl.loadShader(WebGLRenderingContext.FRAGMENT_SHADER, 'assets/shaders/main.frag')
 	]).pipe(map(([vertShader, fragShader]) => gl.createProgram(vertShader, fragShader))),
-	modelManager.loadModel('/assets/models/eyeball/eyeball.obj')
+	modelManager.loadModel('models/terrain/modular_terrain_collections/Modular Terrain Hilly/Prop_Bridge_Log_End_Edge.obj')
 ]).pipe(
 	tap(([_, modelID]) => {
 		// const modelID = modelRenderer.createModel(m);
 		const m = modelManager.getModel(modelID);
-		const mat = m.materials.get('Eye_Tranz.001') as IMaterial;
-		mat.ambient = vec3.fromValues(0.0, 0.0, 0.0);
-		mat.diffuse = vec3.fromValues(0.0, 0.0, 0.0);
 
 		const modelMatrix = mat4.create();
 		// left-facing to front-facing
 		mat4.rotateY(modelMatrix, modelMatrix, -3.141592 / 2);
 		// z-up to y-up
 		mat4.rotateX(modelMatrix, modelMatrix, -3.141592 / 2);
+		// scale to height = 10
+		mat4.scale(modelMatrix, modelMatrix, [10, 10, 10].map(ten => ten / (m.Y.max - m.Y.min)))
 		// center model
 		mat4.translate(modelMatrix, modelMatrix, [-(m.X.max + m.X.min) / 2, -(m.Y.max + m.Y.min) / 2, -(m.Z.max + m.Z.min) / 2]);
 		// modelRenderer.createInstance(modelID, modelMatrix);
 		modelManager.instantiate(gl, modelID, modelMatrix);
-
-		const modelMatrix2 = mat4.create();
-		// move to the right
-		mat4.translate(modelMatrix2, modelMatrix2, [20, 0, 0]);
-		// left-facing to front-facing
-		mat4.rotateY(modelMatrix2, modelMatrix2, -3.141592 / 2);
-		// z-up to y-up
-		mat4.rotateX(modelMatrix2, modelMatrix2, -3.141592 / 2);
-		// center model
-		mat4.translate(modelMatrix2, modelMatrix2, [-(m.X.max + m.X.min) / 2, -(m.Y.max + m.Y.min) / 2, -(m.Z.max + m.Z.min) / 2]);
-		// modelRenderer.createInstance(modelID, modelMatrix2);
-		modelManager.instantiate(gl, modelID, modelMatrix2);
 	}),
-	mergeMap(([program]) => interval(refreshFrequency).pipe(startWith(-1)).pipe(
+	mergeMap(([program]) => interval(1000 / refreshFrequency).pipe(startWith(-1)).pipe(
 		tap((i: number) => {
 			const percent = ((refreshFrequency * (i + 1)) / roundTime) % 1;
 	
@@ -83,6 +84,7 @@ forkJoin([
 			cameraManager.nextFrame(gl, program);
 			lightingManager.nextFrame(gl, program);
 			modelManager.nextFrame(gl, program, buffer);
+			renderCounter++;
 		})
 	))
 ).subscribe();

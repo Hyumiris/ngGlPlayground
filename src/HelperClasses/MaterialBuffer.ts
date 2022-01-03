@@ -18,6 +18,8 @@ export class MaterialBuffer {
 	constructor(private gl: WebGlFacade, private material: IMaterial) {
 		if (material.color_map) {
 			this.loadTexture(gl, material.color_map).subscribe(texture => this.colorTex = texture);
+		} else {
+			this.colorTex = this.genWhiteTexture(gl);
 		}
 		if (material.bump_map) {
 			this.loadTexture(gl, material.bump_map).subscribe(texture => this.bumpTex = texture);
@@ -82,6 +84,12 @@ export class MaterialBuffer {
 			};
 			image.src = src;
 		});
+	}
+
+	private genWhiteTexture(gl: WebGlFacade) {
+		const texture = gl.createTexture();
+		gl.texImage2D(texture, new ImageData(Uint8ClampedArray.from([255, 255, 255, 255]), 1, 1));
+		return texture;
 	}
 
 }

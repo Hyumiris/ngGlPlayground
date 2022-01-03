@@ -48,7 +48,8 @@ void main() {
 		for(int i = 0; i < MAX_LIGHTS; ++i) {
 			vec3 n_light_direction = normalize(u_directed_light_direction[i]);
 			vec3 reflectDirection = reflect(n_light_direction, n_normal);
-			float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), material_specular_exp);
+			float alignedness = max(dot(viewDirection, reflectDirection), 0.0);
+			float spec = pow(alignedness, max(material_specular_exp, 0.0001));
 			specular_light += spec * u_directed_light_color[i];
 		}
 
